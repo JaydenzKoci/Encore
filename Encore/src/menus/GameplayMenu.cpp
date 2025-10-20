@@ -201,6 +201,7 @@ void GameplayMenu::ControllerInputCallback(int joypadID, GLFWgamepadstate state)
                     inputHandler.handleInputs(
                         player, -1, state.buttons[settingsMain.controllerOverdrive]
                     );
+                } // // if (!player.Bot)
             } else {
                 if (state.axes[-(settingsMain.controllerOverdrive + 1)]
                     != stats->axesValues[-(settingsMain.controllerOverdrive + 1)]) {
