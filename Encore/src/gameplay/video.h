@@ -216,6 +216,7 @@ public:
     void Play() { 
         if (isLoaded) {
             isPlaying = true;
+            hasEnded = false;
             startDelayMs = 0.0;
             playStartTime = std::chrono::steady_clock::now();
         }
@@ -225,6 +226,7 @@ public:
             startDelayMs = delayMs;
             playStartTime = std::chrono::steady_clock::now();
             isPlaying = false;
+            hasEnded = false;
             delayedStart = true;
         }
     }
@@ -255,6 +257,7 @@ public:
     }
 
     bool IsLoaded() const { return isLoaded; }
+    bool HasEnded() const { return hasEnded; }
 
 private:
     void DecodeLoop() {
@@ -317,8 +320,8 @@ private:
                 }
                 av_packet_unref(packet);
             } else {
-                std::lock_guard<std::mutex> lock(seekMutex);
-                seekRequest = true;
+                hasEnded = true;
+                isPlaying = false;
             }
         }
         av_packet_free(&packet);
@@ -349,6 +352,7 @@ private:
     double frameTimer = 0.0;
     std::atomic<bool> isLoaded{false};
     std::atomic<bool> isPlaying{false};
+    std::atomic<bool> hasEnded{false};
 };
 
 #endif // VIDEO_H

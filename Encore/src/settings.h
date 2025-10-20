@@ -29,7 +29,8 @@
     OPTION(bool, ShowHealthBar, true)                                                    \
     OPTION(bool, HideFPSCounter, false)                                                  \
     OPTION(bool, HideVersionInfo, false)                                                 \
-    OPTION(int, HUDPosition, 0)
+    OPTION(int, HUDPosition, 0)                                                          \
+    OPTION(bool, TrackFading, true)
 namespace Encore {
     inline void WriteJsonFile(const std::filesystem::path &FileToWrite, const nlohmann::json &JSONobject) {
         std::ofstream o(FileToWrite, std::ios::out | std::ios::trunc);
@@ -65,7 +66,8 @@ namespace Encore {
         ShowHealthBar,
         HideFPSCounter,
         HideVersionInfo,
-        HUDPosition
+        HUDPosition,
+        TrackFading
     );
 
     class SettingsInit {

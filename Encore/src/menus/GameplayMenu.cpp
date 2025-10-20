@@ -60,10 +60,16 @@ void GameplayMenu::KeyboardInputCallback(int key, int scancode, int action, int 
         int lane = -2;
         if (key == settingsMain.keybindPause && action == GLFW_PRESS) {
             ManagePausedGame(inputHandler, player);
-        } else if ((key == settingsMain.keybindOverdrive
-                    || key == settingsMain.keybindOverdriveAlt)) {
-            inputHandler.handleInputs(player, -1, action);
-        } else if (!player.Bot) {
+        } else {
+            float rendererAlpha = TheGameRenderer.GetRendererAlpha(player.ActiveSlot);
+            if (rendererAlpha < 0.95f) {
+                return;
+            }
+        }
+            if ((key == settingsMain.keybindOverdrive
+                        || key == settingsMain.keybindOverdriveAlt)) {
+                inputHandler.handleInputs(player, -1, action);
+            } else if (!player.Bot) {
             if (player.Instrument != PlasticDrums) {
                 if (player.Difficulty == 3 || player.ClassicMode) {
                     for (int i = 0; i < 5; i++) {
@@ -138,7 +144,7 @@ void GameplayMenu::KeyboardInputCallback(int key, int scancode, int action, int 
             }
         }
     }
-};
+}
 void GameplayMenu::ControllerInputCallback(int joypadID, GLFWgamepadstate state) {
     SettingsOld &settingsMain = SettingsOld::getInstance();
     GameplayInputHandler inputHandler;
@@ -185,29 +191,31 @@ void GameplayMenu::ControllerInputCallback(int joypadID, GLFWgamepadstate state)
                 }
             }
         } //  && !player.Bot
-        if (settingsMain.controllerOverdrive >= 0) {
-            if (state.buttons[settingsMain.controllerOverdrive]
-                != stats->buttonValues[settingsMain.controllerOverdrive]) {
-                stats->buttonValues[settingsMain.controllerOverdrive] =
-                    state.buttons[settingsMain.controllerOverdrive];
-                inputHandler.handleInputs(
-                    player, -1, state.buttons[settingsMain.controllerOverdrive]
-                );
-            } // // if (!player.Bot)
-        } else {
-            if (state.axes[-(settingsMain.controllerOverdrive + 1)]
-                != stats->axesValues[-(settingsMain.controllerOverdrive + 1)]) {
-                stats->axesValues[-(settingsMain.controllerOverdrive + 1)] =
-                    state.axes[-(settingsMain.controllerOverdrive + 1)];
+        float rendererAlpha = TheGameRenderer.GetRendererAlpha(player.ActiveSlot);
+        if (rendererAlpha >= 0.95f) {
+            if (settingsMain.controllerOverdrive >= 0) {
+                if (state.buttons[settingsMain.controllerOverdrive]
+                    != stats->buttonValues[settingsMain.controllerOverdrive]) {
+                    stats->buttonValues[settingsMain.controllerOverdrive] =
+                        state.buttons[settingsMain.controllerOverdrive];
+                    inputHandler.handleInputs(
+                        player, -1, state.buttons[settingsMain.controllerOverdrive]
+                    );
+            } else {
                 if (state.axes[-(settingsMain.controllerOverdrive + 1)]
-                    == 1.0f * (float)settingsMain.controllerOverdriveAxisDirection) {
-                    inputHandler.handleInputs(player, -1, GLFW_PRESS);
-                } else {
-                    inputHandler.handleInputs(player, -1, GLFW_RELEASE);
+                    != stats->axesValues[-(settingsMain.controllerOverdrive + 1)]) {
+                    stats->axesValues[-(settingsMain.controllerOverdrive + 1)] =
+                        state.axes[-(settingsMain.controllerOverdrive + 1)];
+                    if (state.axes[-(settingsMain.controllerOverdrive + 1)]
+                        == 1.0f * (float)settingsMain.controllerOverdriveAxisDirection) {
+                        inputHandler.handleInputs(player, -1, GLFW_PRESS);
+                    } else {
+                        inputHandler.handleInputs(player, -1, GLFW_RELEASE);
+                    }
                 }
             }
         }
-        if ((player.Difficulty == 3 || player.ClassicMode) && !player.Bot) {
+        if ((player.Difficulty == 3 || player.ClassicMode) && !player.Bot && rendererAlpha >= 0.95f) {
             int lane = -2;
             int action = -2;
             for (int i = 0; i < 5; i++) {
@@ -268,7 +276,7 @@ void GameplayMenu::ControllerInputCallback(int joypadID, GLFWgamepadstate state)
                 stats->DownStrum = false;
                 inputHandler.handleInputs(player, 8008135, GLFW_RELEASE);
             }
-        } else if (!player.Bot) {
+        } else if (!player.Bot && rendererAlpha >= 0.95f) {
             for (int i = 0; i < 4; i++) {
                 if (settingsMain.controller4K[i] >= 0) {
                     if (state.buttons[settingsMain.controller4K[i]]
@@ -316,7 +324,9 @@ void GameplayMenu::DrawScorebox(Units &u, Assets &assets, float scoreY) {
     float hudOffsetX = 0.0f;
     float hudOffsetY = 0.0f;
     
-    switch (TheGameSettings.HUDPosition) {
+    int effectiveHUDPosition = (ThePlayerManager.PlayersActive > 1) ? 0 : TheGameSettings.HUDPosition;
+    
+    switch (effectiveHUDPosition) {
         case 0:
             hudOffsetX = 0.0f;
             hudOffsetY = 0.0f;
@@ -373,7 +383,9 @@ void GameplayMenu::DrawTimerbox(Units &u, Assets &assets, float scoreY) {
     float hudOffsetX = 0.0f;
     float hudOffsetY = 0.0f;
     
-    switch (TheGameSettings.HUDPosition) {
+    int effectiveHUDPosition = (ThePlayerManager.PlayersActive > 1) ? 0 : TheGameSettings.HUDPosition;
+    
+    switch (effectiveHUDPosition) {
         case 0:
             hudOffsetX = 0.0f;
             hudOffsetY = 0.0f;
@@ -538,7 +550,22 @@ void GameplayMenu::Draw() {
     TheGameRenderer.backgroundVideo.Update();
 
     if (TheGameRenderer.backgroundVideo.IsLoaded()) {
-        TheGameRenderer.backgroundVideo.Draw(0, 0, WHITE);
+        if (TheGameRenderer.backgroundVideo.HasEnded()) {
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
+        } else {
+            float totalAlpha = 0.0f;
+            int activePlayerCount = 0;
+            for (int i = 0; i < ThePlayerManager.PlayersActive; i++) {
+                totalAlpha += TheGameRenderer.GetRendererAlpha(i);
+                activePlayerCount++;
+            }
+            float averageAlpha = (activePlayerCount > 0) ? (totalAlpha / activePlayerCount) : 1.0f;
+            
+            float videoBrightness = 0.75f + (0.25f * (1.0f - averageAlpha));
+            unsigned char brightness = (unsigned char)(videoBrightness * 255);
+            Color videoTint = { brightness, brightness, brightness, 255 };
+            TheGameRenderer.backgroundVideo.Draw(0, 0, videoTint);
+        }
     } else {
         GameMenu::DrawAlbumArtBackground(TheSongList.curSong->albumArtBlur);
     }
@@ -660,7 +687,9 @@ void GameplayMenu::Draw() {
     float hudOffsetX = 0.0f;
     float hudOffsetY = 0.0f;
     
-    switch (TheGameSettings.HUDPosition) {
+    int effectiveHUDPosition = (ThePlayerManager.PlayersActive > 1) ? 0 : TheGameSettings.HUDPosition;
+    
+    switch (effectiveHUDPosition) {
         case 0:
             hudOffsetX = 0.0f;
             hudOffsetY = 0.0f;
@@ -876,6 +905,8 @@ void GameplayMenu::Draw() {
             }
         }
         if (GuiButton(RestartBox, "Restart")) {
+            TheGameRenderer.ResetFadeState();
+            
             TheGameRenderer.backgroundVideo.Stop();
             TheSongTime.Reset();
             for (int player = 0; player < ThePlayerManager.PlayersActive; player++) {
@@ -1089,6 +1120,8 @@ void GameplayMenu::Draw() {
 }
 
 void GameplayMenu::Load() {
+    TheGameRenderer.ResetFadeState();
+    
     TheSongList.curSong->LoadAlbumArt();
     std::filesystem::path videoPath = TheSongList.curSong->songInfoPath.parent_path() / "video.mp4";
     if (TheGameRenderer.backgroundVideo.Load(videoPath)) {

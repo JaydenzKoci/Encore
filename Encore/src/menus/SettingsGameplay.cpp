@@ -103,6 +103,10 @@ void SettingsGameplay::Draw() {
             "TBD"
         },
         {
+            "Track Fading",
+            "Automatically fade out the track when no notes are present and fade back in when notes approach."
+        },
+        {
             "Download Tracks",
             "Download all available tracks from EncoreCustoms repository and extract them to your songs folder."
         }
@@ -417,6 +421,41 @@ void SettingsGameplay::Draw() {
     }
 
     settingOffset++;
+    float trackFadingTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    Rectangle trackFadingBoxRect = {boxLeft - borderWidth, trackFadingTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, trackFadingTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, trackFadingTop, boxWidth, EntryHeight, boxBackground);
+    Vector2 trackFadingTextSize = MeasureTextEx(assets.rubikBold, "Track Fading", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Track Fading", {boxLeft + u.winpct(0.01f), trackFadingTop + (EntryHeight - trackFadingTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    Rectangle trackFadingOffButtonRect = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, trackFadingTop, toggleButtonWidth, EntryHeight};
+    Rectangle trackFadingOnButtonRect = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, trackFadingTop, toggleButtonWidth, EntryHeight};
+    if (CheckCollisionPointRec(mousePos, trackFadingOffButtonRect) || CheckCollisionPointRec(mousePos, trackFadingOnButtonRect)) {
+        selectedIndex = 7;
+        isHovering = true;
+        DrawRectangleLinesEx(trackFadingBoxRect, highlightBorderWidth, glowColor);
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, !TheGameSettings.TrackFading ? ColorToInt(activeColor) : defaultColor);
+    if (GuiButton(trackFadingOffButtonRect, "Off")) {
+        if (TheGameSettings.TrackFading) {
+            TheGameSettings.TrackFading = false;
+            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+        }
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, TheGameSettings.TrackFading ? ColorToInt(activeColor) : defaultColor);
+    if (GuiButton(trackFadingOnButtonRect, "On")) {
+        if (!TheGameSettings.TrackFading) {
+            TheGameSettings.TrackFading = true;
+            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+        }
+    }
+    if (!TheGameSettings.TrackFading) {
+        DrawRectangleLinesEx(trackFadingOffButtonRect, highlightBorderWidth, glowColor);
+    } else {
+        DrawRectangleLinesEx(trackFadingOnButtonRect, highlightBorderWidth, glowColor);
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
+
+    settingOffset++;
     float downloadTracksTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
     Rectangle downloadTracksBoxRect = {boxLeft - borderWidth, downloadTracksTop - borderWidth, boxWidth + 2 * borderWidth, scanButtonHeight + 2 * borderWidth};
     DrawRectangle(boxLeft - borderWidth, downloadTracksTop - borderWidth, boxWidth + 2 * borderWidth, scanButtonHeight + 2 * borderWidth, boxBorder);
@@ -429,7 +468,7 @@ void SettingsGameplay::Draw() {
     static std::string downloadStatus = "Download All";
     
     if (CheckCollisionPointRec(mousePos, downloadButtonRect)) {
-        selectedIndex = 7;
+        selectedIndex = 8;
         isHovering = true;
         DrawRectangleLinesEx(downloadTracksBoxRect, highlightBorderWidth, glowColor);
     }
