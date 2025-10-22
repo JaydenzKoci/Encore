@@ -12,10 +12,27 @@
 #include <thread>
 #include <chrono>
 
+#include "song/songlist.h"
+#include "settings.h"
+
 #ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOGDI
+#define CloseWindow CloseWindow_Win32
+#define ShowCursor ShowCursor_Win32
+#define LoadImage LoadImage_Win32
+#define DrawText DrawText_Win32
+#define DrawTextEx DrawTextEx_Win32
 #include <windows.h>
 #include <wininet.h>
 #include <urlmon.h>
+#undef CloseWindow
+#undef ShowCursor
+#undef LoadImage
+#undef DrawText
+#undef DrawTextEx
+#undef GetObject
+#undef NOGDI
 #else
 #include <cstdlib>
 #endif
@@ -332,6 +349,25 @@ void Encore::TrackDownloader::StartBackgroundDownload() {
                 currentTrack++;
                 downloadProgress = float(completedDownloads) / float(totalDownloads);
             }
+        }
+
+        downloadStatusText = "Downloading covers...";
+        std::string songsPath = getSongsPath();
+        for (const auto& track : tracks) {
+            if (!track.cover.empty() && track.isDownloaded) {
+                fs::path trackPath = fs::path(songsPath) / track.key;
+                if (fs::exists(trackPath) && fs::is_directory(trackPath)) {
+                    fs::path coverPath = trackPath / "album.jpg";
+                    if (!fs::exists(coverPath)) {
+                        downloadFile(track.cover, coverPath.string(), nullptr);
+                    }
+                }
+            }
+        }
+
+        downloadStatusText = "Scanning songs...";
+        if (!TheGameSettings.SongPaths.empty()) {
+            TheSongList.ScanSongs(TheGameSettings.SongPaths);
         }
 
         isDownloading = false;

@@ -151,6 +151,9 @@ public:
         double sustainEndTime = 0.0;
         float fadeDuration = 0.5f;
         float fadeOutDelay = 1.5f;
+        double nextNoteTime = 0.0;
+        bool showCountdown = false;
+        double countdownStartTime = 0.0;
     };
     
     std::vector<PlayerFadeState> playerFadeStates;
@@ -247,6 +250,7 @@ public:
     void InitializePlayerFadeStates(int numPlayers);
     float GetRendererAlpha(int playerIndex) const;
     PlayerFadeState& GetPlayerFadeState(int playerIndex);
+    double GetNextNoteTime(double currentTime, Player &player);
 };
 
 extern gameplayRenderer TheGameRenderer;

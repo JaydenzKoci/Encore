@@ -513,6 +513,9 @@ void gameplayRenderer::RenderPadNotes(
             if (curNote.time + curNote.len < curSongTime - 2)
                 continue;
 
+            if (TheSongTime.IsInResumeGracePeriod() && curNote.time < TheSongTime.GetResumeTargetTime())
+                continue;
+
             double HighwayEnd = length + (smasherPos * 4);
             double NoteStartPositionWorld =
                 GetNotePos(curNote.time, curSongTime, player.NoteSpeed, HighwayEnd);
@@ -535,7 +538,8 @@ void gameplayRenderer::RenderPadNotes(
 
             if (!curNote.hit && !curNote.accounted
                 && curNote.time + goodBackend < curSongTime
-                && !TheSongTime.SongComplete()) {
+                && !TheSongTime.SongComplete()
+                && !TheSongTime.IsInResumeGracePeriod()) {
                 curNote.miss = true;
                 player.stats->MissNote();
                 player.stats->Combo = 0;
@@ -656,7 +660,8 @@ void gameplayRenderer::CheckPlasticNotes(
     if (!curNote.hit && !curNote.accounted
         && curNote.time + goodBackend + player.InputCalibration < curSongTime
         && !TheSongTime.SongComplete() && stats->curNoteInt < curChart.notes.size()
-        && !player.Bot && !curNote.hitInFrontend) {
+        && !player.Bot && !curNote.hitInFrontend
+        && !TheSongTime.IsInResumeGracePeriod()) {
         Encore::EncoreLog(
             LOG_INFO,
             TextFormat(
@@ -751,6 +756,9 @@ void gameplayRenderer::RenderClassicNotes(
             continue;
         }
         if (curNote.time + curNote.len < curSongTime - 2)
+            continue;
+
+        if (TheSongTime.IsInResumeGracePeriod() && curNote.time < TheSongTime.GetResumeTargetTime())
             continue;
 
         double NoteStartPositionWorld =
@@ -2094,6 +2102,9 @@ void gameplayRenderer::RenderPDrumsNotes(
     PlayerGameplayStats *&stats = player.stats;
 
     for (auto &curNote : curChart.notes) {
+        if (TheSongTime.IsInResumeGracePeriod() && curNote.time < TheSongTime.GetResumeTargetTime())
+            continue;
+
         double HighwayEnd = length + (smasherPos * 4);
         double NoteStartPositionWorld =
             GetNotePos(curNote.time, curSongTime, player.NoteSpeed, HighwayEnd);
@@ -2105,7 +2116,8 @@ void gameplayRenderer::RenderPDrumsNotes(
         if (!curNote.hit && !curNote.accounted
             && curNote.time + goodBackend + player.InputCalibration < curSongTime
             && !TheSongTime.SongComplete() && stats->curNoteInt < curChart.notes.size()
-            && !TheSongTime.SongComplete() && !player.Bot) {
+            && !player.Bot
+            && !TheSongTime.IsInResumeGracePeriod()) {
             Encore::EncoreLog(
                 LOG_INFO,
                 TextFormat("Missed note at %f, note %01i", curSongTime, stats->curNoteInt)
@@ -2978,6 +2990,26 @@ bool gameplayRenderer::HasNotesInTimeRange(double startTime, double endTime, Pla
     return false;
 }
 
+double gameplayRenderer::GetNextNoteTime(double currentTime, Player &player) {
+    Chart &curChart = TheSongList.curSong->parts[player.Instrument]->charts[player.Difficulty];
+    
+    for (const auto &note : curChart.notes) {
+        if (!note.valid) {
+            continue;
+        }
+        
+        if (note.lane < 0 || note.lane > 10) {
+            continue;
+        }
+        
+        if (note.time > currentTime) {
+            return note.time;
+        }
+    }
+    
+    return -1.0;
+}
+
 void gameplayRenderer::UpdateRendererFade(double currentTime, Player &player) {
     extern Encore::Settings TheGameSettings;
     
@@ -3040,6 +3072,11 @@ void gameplayRenderer::UpdateRendererFade(double currentTime, Player &player) {
     if (canFadeOut) {
         fadeState.isFading = true;
         fadeState.fadeStartTime = currentTime;
+        fadeState.nextNoteTime = GetNextNoteTime(currentTime, player);
+        fadeState.showCountdown = (fadeState.nextNoteTime > 0);
+        if (fadeState.showCountdown) {
+            fadeState.countdownStartTime = currentTime;
+        }
         ClearHeldInputs(player);
     }
     
@@ -3048,6 +3085,8 @@ void gameplayRenderer::UpdateRendererFade(double currentTime, Player &player) {
         fadeState.isFadedOut = false;
         fadeState.fadeInStartTime = currentTime;
         fadeState.noNotesDetectedTime = 0.0;
+        fadeState.showCountdown = false;
+        fadeState.countdownStartTime = 0.0;
         ClearHeldInputs(player);
     }
     
@@ -3093,6 +3132,9 @@ void gameplayRenderer::ResetFadeState() {
             fadeState.fadeInStartTime = 0.0;
             fadeState.noNotesDetectedTime = 0.0;
             fadeState.sustainEndTime = 0.0;
+            fadeState.nextNoteTime = 0.0;
+            fadeState.showCountdown = false;
+            fadeState.countdownStartTime = 0.0;
             continue;
         }
         
@@ -3106,6 +3148,12 @@ void gameplayRenderer::ResetFadeState() {
             fadeState.rendererAlpha = 0.0f;
             fadeState.isFading = false;
             fadeState.isFadedOut = true;
+            
+            fadeState.nextNoteTime = GetNextNoteTime(0.0, player);
+            fadeState.showCountdown = (fadeState.nextNoteTime > 0);
+            if (fadeState.showCountdown) {
+                fadeState.countdownStartTime = 0.0;
+            }
         }
         
         fadeState.lastNoteCheckTime = 0.0;
@@ -3113,6 +3161,12 @@ void gameplayRenderer::ResetFadeState() {
         fadeState.fadeInStartTime = 0.0;
         fadeState.noNotesDetectedTime = 0.0;
         fadeState.sustainEndTime = 0.0;
+        
+        if (hasEarlyNotes) {
+            fadeState.nextNoteTime = 0.0;
+            fadeState.showCountdown = false;
+            fadeState.countdownStartTime = 0.0;
+        }
     }
 }
 

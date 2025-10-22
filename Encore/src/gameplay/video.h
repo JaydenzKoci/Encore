@@ -96,9 +96,19 @@ public:
 
         display_width = width;
         display_height = height;
-        if (height > 500) {
+        
+        int maxHeight = 500;
+        switch (TheGameSettings.VideoBackgroundResolution) {
+            case 0: maxHeight = 2160; break;
+            case 1: maxHeight = 1080; break;
+            case 2: maxHeight = 720;  break;
+            case 3: maxHeight = 480;  break;
+            default: maxHeight = 500; break;
+        }
+        
+        if (height > maxHeight) {
             float aspect = (float)width / (float)height;
-            display_height = 500;
+            display_height = maxHeight;
             display_width = (int)(display_height * aspect);
         }
 
@@ -164,6 +174,17 @@ public:
         }
         
         if (!isPlaying) return;
+        
+        if (endTimeMs > 0.0) {
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - playStartTime).count();
+            double adjustedElapsed = elapsed - startDelayMs;
+            if (adjustedElapsed >= endTimeMs) {
+                isPlaying = false;
+                hasEnded = true;
+                return;
+            }
+        }
 
         frameTimer += GetFrameTime();
         double frameDuration = (fps > 0) ? (1.0 / fps) : 0.033;
@@ -190,7 +211,7 @@ public:
     }
 
     void Draw(int posX = 0, int posY = 0, Color tint = WHITE) {
-        if (isLoaded && displayTexture.id > 0) {
+        if (isLoaded && displayTexture.id > 0 && TheGameSettings.VideoBackgrounds) {
             float screenWidth = (float)GetScreenWidth();
             float screenHeight = (float)GetScreenHeight();
             float screenAspect = screenWidth / screenHeight;
@@ -218,6 +239,7 @@ public:
             isPlaying = true;
             hasEnded = false;
             startDelayMs = 0.0;
+            endTimeMs = 0.0;
             playStartTime = std::chrono::steady_clock::now();
         }
     }
@@ -228,6 +250,27 @@ public:
             isPlaying = false;
             hasEnded = false;
             delayedStart = true;
+        }
+    }
+    void PlayWithDelayAndEndTime(double delayMs, double endMs) {
+        if (isLoaded) {
+            startDelayMs = delayMs;
+            endTimeMs = endMs;
+            playStartTime = std::chrono::steady_clock::now();
+            isPlaying = false;
+            hasEnded = false;
+            delayedStart = true;
+        }
+    }
+    void SetEndTime(double endMs) {
+        endTimeMs = endMs;
+    }
+    void Seek(double timeMs) {
+        if (isLoaded) {
+            std::lock_guard<std::mutex> lock(seekMutex);
+            seekRequest = true;
+            seekToTime = timeMs / 1000.0;
+            frameQueueCond.notify_all();
         }
     }
     void Pause() { 
@@ -249,6 +292,7 @@ public:
         if (isLoaded) {
             isPlaying = false;
             delayedStart = false;
+            endTimeMs = 0.0;
             std::lock_guard<std::mutex> lock(seekMutex);
             seekRequest = true;
             seekToTime = 0.0;
@@ -343,6 +387,7 @@ private:
     std::atomic<bool> stopDecoder{false};
     double seekToTime = 0.0;
     double startDelayMs = 0.0;
+    double endTimeMs = 0.0;
     std::chrono::steady_clock::time_point playStartTime;
     std::atomic<bool> delayedStart{false};
 

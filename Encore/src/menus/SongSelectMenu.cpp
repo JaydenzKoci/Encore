@@ -555,8 +555,15 @@ void SongSelectMenu::Draw() {
     }
 
     GameMenu::DrawBottomOvershell();
+    
+    float buttonWidth = u.winpct(0.18f);
+    float buttonGap = u.winpct(0.02f);
+    float buttonHeight = u.hinpct(0.05f);
+    float buttonY = GetScreenHeight() - u.hpct(0.1475f);
+    
     GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, ColorToInt(ColorBrightness(AccentColor, -0.25)));
-    if (GuiButton(Rectangle{ u.LeftSide, GetScreenHeight() - u.hpct(0.1475f), u.winpct(0.2f), u.hinpct(0.05f) }, "Play Song")) {
+    GuiSetStyle(BUTTON, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
+    if (GuiButton(Rectangle{ u.LeftSide, buttonY, buttonWidth, buttonHeight }, "Play Song")) {
         if (TheSongList.curSong) {
             if (!TheSongList.curSong->ini) {
                 TheSongList.curSong->LoadSong(TheSongList.curSong->songInfoPath);
@@ -573,8 +580,9 @@ void SongSelectMenu::Draw() {
         }
     }
     GuiSetStyle(BUTTON, BASE_COLOR_NORMAL, 0x181827FF);
+    GuiSetStyle(BUTTON, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
 
-    if (GuiButton(Rectangle{ u.LeftSide + u.winpct(0.4f) - 2, GetScreenHeight() - u.hpct(0.1475f), u.winpct(0.2f), u.hinpct(0.05f) }, "Sort")) {
+    if (GuiButton(Rectangle{ u.LeftSide + (buttonWidth + buttonGap) * 2, buttonY, buttonWidth, buttonHeight }, "Sort")) {
         int selectedSongIndex = -1;
         if (TheSongList.curSong) {
             for (size_t i = 0; i < TheSongList.songs.size(); i++) {
@@ -617,7 +625,8 @@ void SongSelectMenu::Draw() {
             ComputeSongTextMetrics(*TheSongList.curSong);
         }
     }
-    if (GuiButton(Rectangle{ u.LeftSide + u.winpct(0.2f) - 1, GetScreenHeight() - u.hpct(0.1475f), u.winpct(0.2f), u.hinpct(0.05f) }, "Back")) {
+    GuiSetStyle(BUTTON, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
+    if (GuiButton(Rectangle{ u.LeftSide + buttonWidth + buttonGap, buttonY, buttonWidth, buttonHeight }, "Back")) {
         if (!TheAudioManager.loadedStreams.empty()) {
             for (auto& stream : TheAudioManager.loadedStreams) {
                 TheAudioManager.StopPlayback(stream.handle);

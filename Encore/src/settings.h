@@ -30,7 +30,10 @@
     OPTION(bool, HideFPSCounter, false)                                                  \
     OPTION(bool, HideVersionInfo, false)                                                 \
     OPTION(int, HUDPosition, 0)                                                          \
-    OPTION(bool, TrackFading, true)
+    OPTION(bool, TrackFading, true)                                                  \
+    OPTION(bool, VideoBackgrounds, true)                                                \
+    OPTION(int, VideoBackgroundResolution, 0)                                           \
+    OPTION(int, BackgroundFade, 75)
 namespace Encore {
     inline void WriteJsonFile(const std::filesystem::path &FileToWrite, const nlohmann::json &JSONobject) {
         std::ofstream o(FileToWrite, std::ios::out | std::ios::trunc);
@@ -67,7 +70,10 @@ namespace Encore {
         HideFPSCounter,
         HideVersionInfo,
         HUDPosition,
-        TrackFading
+        TrackFading,
+        VideoBackgrounds,
+        VideoBackgroundResolution,
+        BackgroundFade
     );
 
     class SettingsInit {

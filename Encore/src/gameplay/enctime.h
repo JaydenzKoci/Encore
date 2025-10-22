@@ -12,8 +12,11 @@ private:
     double fakeStartTime = 0.0;
     double endTime = 0.0;
     double pauseTime = 0.0;
+    double pausedSongPosition = 0.0;
+    double resumeTargetTime = 0.0;
     bool running = false;
     bool paused = false;
+    bool inResumeGracePeriod = false;
 
 public:
     SongTime() {};
@@ -36,6 +39,9 @@ public:
     double GetFakeStartTime();
     bool Running();
     bool SongComplete();
+    bool IsInResumeGracePeriod();
+    double GetPausedSongPosition();
+    double GetResumeTargetTime();
 };
 
 extern SongTime TheSongTime;

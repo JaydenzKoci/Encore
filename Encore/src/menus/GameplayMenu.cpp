@@ -97,10 +97,21 @@ void ManagePausedGame(GameplayInputHandler inputHandler, Player &player) {
     } else {
         TheAudioManager.unpauseStreams();
         TheSongTime.Resume();
-        TheGameRenderer.backgroundVideo.Resume();
-        for (int i = 0; i < (player.Difficulty == 3 ? 5 : 4); i++) {
-            inputHandler.handleInputs(player, i, -1);
+        
+        if (TheGameRenderer.backgroundVideo.IsLoaded()) {
+            double currentSongTime = TheSongTime.GetSongTime();
+            double videoSeekTimeMs = currentSongTime * 1000.0;
+            
+            if (TheSongList.curSong && TheSongList.curSong->videoStartTime > 0) {
+                videoSeekTimeMs = videoSeekTimeMs - TheSongList.curSong->videoStartTime;
+            }
+            if (videoSeekTimeMs < 0) videoSeekTimeMs = 0;
+            
+            TheGameRenderer.backgroundVideo.Seek(videoSeekTimeMs);
+            TheGameRenderer.backgroundVideo.Resume();
         }
+        
+        TheGameRenderer.ClearHeldInputs(player);
     }
 }
 
@@ -610,7 +621,7 @@ void GameplayMenu::Draw() {
     TheGameRenderer.backgroundVideo.Update();
 
     if (TheGameRenderer.backgroundVideo.IsLoaded()) {
-        if (TheGameRenderer.backgroundVideo.HasEnded()) {
+        if (TheGameRenderer.backgroundVideo.HasEnded() || TheSongTime.IsInResumeGracePeriod()) {
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
         } else {
             float totalAlpha = 0.0f;
@@ -621,7 +632,9 @@ void GameplayMenu::Draw() {
             }
             float averageAlpha = (activePlayerCount > 0) ? (totalAlpha / activePlayerCount) : 1.0f;
             
-            float videoBrightness = 0.75f + (0.25f * (1.0f - averageAlpha));
+            float fadeAmount = TheGameSettings.BackgroundFade / 100.0f;
+            float minBrightness = 1.0f - fadeAmount;
+            float videoBrightness = minBrightness + (fadeAmount * (1.0f - averageAlpha));
             unsigned char brightness = (unsigned char)(videoBrightness * 255);
             Color videoTint = { brightness, brightness, brightness, 255 };
             TheGameRenderer.backgroundVideo.Draw(0, 0, videoTint);
@@ -730,6 +743,81 @@ void GameplayMenu::Draw() {
             0,
             headerUsernameColor
         );
+        
+        if (TheGameSettings.TrackFading && pnum < TheGameRenderer.playerFadeStates.size()) {
+            auto& fadeState = TheGameRenderer.playerFadeStates[pnum];
+            if (fadeState.showCountdown && fadeState.nextNoteTime > 0 && fadeState.isFadedOut) {
+                double currentTime = TheSongTime.GetSongTime();
+                double timeUntilNextNote = fadeState.nextNoteTime - currentTime;
+                
+                double countdownTime = timeUntilNextNote - 3.0;
+                
+                if (timeUntilNextNote > 0 && countdownTime > 0) {
+                    if (fadeState.countdownStartTime == 0.0) {
+                        fadeState.countdownStartTime = currentTime;
+                    }
+                    
+                    float ringSize = u.hinpct(0.08f);
+                    float ringX = CenterPosForText - (ringSize / 2) - TheGameRenderer.renderPos;
+                    float ringY = GetScreenHeight() - u.hinpct(0.04) - ringSize - u.hinpct(0.02f);
+                    
+                    int seconds = (int)ceil(countdownTime);
+                    if (seconds < 1) seconds = 1;
+                    if (seconds > 99) seconds = 99;
+                    
+                    float alpha = 255.0f;
+                    
+                    float fadeInDuration = 0.5f;
+                    double timeSinceCountdownStart = currentTime - fadeState.countdownStartTime;
+                    if (timeSinceCountdownStart < fadeInDuration) {
+                        float fadeInAlpha = 255.0f * (timeSinceCountdownStart / fadeInDuration);
+                        alpha = fadeInAlpha;
+                    }
+                    
+                    if (countdownTime <= 1.0) {
+                        float fadeOutAlpha = 255.0f * countdownTime;
+                        if (fadeOutAlpha < alpha) {
+                            alpha = fadeOutAlpha;
+                        }
+                    }
+                    
+                    if (alpha < 0) alpha = 0;
+                    if (alpha > 255) alpha = 255;
+                    
+                    Color ringColor = { 255, 255, 255, (unsigned char)alpha };
+                    Color textColor = { 255, 255, 255, (unsigned char)alpha };
+                    
+                    if (assets.CountInTexture.id > 0) {
+                        DrawTexturePro(
+                            assets.CountInTexture,
+                            { 0, 0, (float)assets.CountInTexture.width, (float)assets.CountInTexture.height },
+                            { ringX, ringY, ringSize, ringSize },
+                            { 0, 0 },
+                            0.0f,
+                            ringColor
+                        );
+                    } else {
+                        DrawRectangle(ringX, ringY, ringSize, ringSize, { 255, 0, 0, (unsigned char)alpha });
+                    }
+                    
+                    const char* countdownText = TextFormat("%d", seconds);
+                    float countdownFontSize = u.hinpct(0.03f);
+                    Vector2 countdownTextSize = MeasureTextEx(assets.rubikBold, countdownText, countdownFontSize, 0);
+                    
+                    DrawTextEx(
+                        assets.rubikBold,
+                        countdownText,
+                        { ringX + (ringSize - countdownTextSize.x) / 2,
+                          ringY + (ringSize - countdownTextSize.y) / 2 },
+                        countdownFontSize,
+                        0,
+                        textColor
+                    );
+                } else {
+                    fadeState.countdownStartTime = 0.0;
+                }
+            }
+        }
     }
 
     extern Encore::Settings TheGameSettings;
@@ -931,6 +1019,8 @@ void GameplayMenu::Draw() {
 
     float floatSongLength = TheAudioManager.GetMusicTimePlayed();
 
+
+
     if (ThePlayerManager.BandStats->Paused) {
         DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color { 0, 0, 0, 80 });
         encOS::DrawTopOvershell(0.2f);
@@ -948,6 +1038,7 @@ void GameplayMenu::Draw() {
             TheAudioManager.unpauseStreams();
             TheSongTime.Resume();
             TheGameRenderer.backgroundVideo.Resume();
+            
             ThePlayerManager.BandStats->Paused = false;
             for (int playerNum = 0; playerNum < ThePlayerManager.PlayersActive;
                  playerNum++) {
@@ -957,7 +1048,32 @@ void GameplayMenu::Draw() {
         if (GuiButton(RestartBox, "Restart")) {
             TheGameRenderer.ResetFadeState();
             
-            TheGameRenderer.backgroundVideo.Stop();
+            if (TheGameRenderer.backgroundVideo.IsLoaded()) {
+                TheGameRenderer.backgroundVideo.Stop();
+                TheGameRenderer.backgroundVideo.Unload();
+                
+                if (TheGameSettings.VideoBackgrounds) {
+                    std::filesystem::path videoPath = TheSongList.curSong->songInfoPath.parent_path() / "video.mp4";
+                    if (TheGameRenderer.backgroundVideo.Load(videoPath)) {
+                        if (TheSongList.curSong->videoEndTime > 0) {
+                            TheGameRenderer.backgroundVideo.SetEndTime(TheSongList.curSong->videoEndTime);
+                        }
+                        
+                        if (TheSongList.curSong->videoStartTime > 0) {
+                            if (TheSongList.curSong->videoEndTime > 0) {
+                                TheGameRenderer.backgroundVideo.PlayWithDelayAndEndTime(
+                                    TheSongList.curSong->videoStartTime, 
+                                    TheSongList.curSong->videoEndTime
+                                );
+                            } else {
+                                TheGameRenderer.backgroundVideo.PlayWithDelay(TheSongList.curSong->videoStartTime);
+                            }
+                        } else {
+                            TheGameRenderer.backgroundVideo.Play();
+                        }
+                    }
+                }
+            }
             TheSongTime.Reset();
             for (int player = 0; player < ThePlayerManager.PlayersActive; player++) {
                 TheSongList.curSong
@@ -1140,12 +1256,26 @@ void GameplayMenu::Load() {
     TheGameRenderer.ResetFadeState();
     
     TheSongList.curSong->LoadAlbumArt();
-    std::filesystem::path videoPath = TheSongList.curSong->songInfoPath.parent_path() / "video.mp4";
-    if (TheGameRenderer.backgroundVideo.Load(videoPath)) {
-        if (TheSongList.curSong->videoStartTime > 0) {
-            TheGameRenderer.backgroundVideo.PlayWithDelay(TheSongList.curSong->videoStartTime);
-        } else {
-            TheGameRenderer.backgroundVideo.Play();
+    
+    if (TheGameSettings.VideoBackgrounds) {
+        std::filesystem::path videoPath = TheSongList.curSong->songInfoPath.parent_path() / "video.mp4";
+        if (TheGameRenderer.backgroundVideo.Load(videoPath)) {
+            if (TheSongList.curSong->videoEndTime > 0) {
+                TheGameRenderer.backgroundVideo.SetEndTime(TheSongList.curSong->videoEndTime);
+            }
+            
+            if (TheSongList.curSong->videoStartTime > 0) {
+                if (TheSongList.curSong->videoEndTime > 0) {
+                    TheGameRenderer.backgroundVideo.PlayWithDelayAndEndTime(
+                        TheSongList.curSong->videoStartTime, 
+                        TheSongList.curSong->videoEndTime
+                    );
+                } else {
+                    TheGameRenderer.backgroundVideo.PlayWithDelay(TheSongList.curSong->videoStartTime);
+                }
+            } else {
+                TheGameRenderer.backgroundVideo.Play();
+            }
         }
     }
     if (ThePlayerManager.PlayersActive > 1) {

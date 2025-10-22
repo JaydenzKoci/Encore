@@ -274,6 +274,9 @@ void Assets::LoadAssets() {
     BaseRingTexture =
         LoadTextureFilter((directory / "Assets/ui/hugh ring/rings.png"), loadedAssets);
 
+    CountInTexture =
+        LoadTextureFilter((directory / "Assets/ui/CountIn.png"), loadedAssets);
+
     InstIcons.push_back(
         LoadTextureFilter((directory / "Assets/ui/hugh ring/drums-inv.png"), loadedAssets)
     );

@@ -138,6 +138,8 @@ void GameplayInputHandler::handleInputs(Player &player, int lane, int action) {
     Encore::EncoreLog(LOG_DEBUG, TextFormat("Player: %s, Lane: %01i, Action: %01i", player.Name.c_str(), lane, action));
     if (stats->Paused)
         return;
+    if (enctime.IsInResumeGracePeriod())
+        return;
     if (lane == -2)
         return;
     if (player.LeftyFlip && lane != -1 && !player.ClassicMode) {

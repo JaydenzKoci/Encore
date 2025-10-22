@@ -209,6 +209,7 @@ public:
     bool ini = false;
     float previewStartTime = 0.0f;
     int videoStartTime = 0;
+    int videoEndTime = 0;
 
     std::vector<BPM> bpms {};
     std::vector<TimeSig> timesigs {};
@@ -432,6 +433,9 @@ public:
             }
             if (document.HasMember("video_start_time") && document["video_start_time"].IsInt()) {
                 videoStartTime = document["video_start_time"].GetInt();
+            }
+            if (document.HasMember("video_end_time") && document["video_end_time"].IsInt()) {
+                videoEndTime = document["video_end_time"].GetInt();
             }
         }
         if (document.HasMember("stems") && document["stems"].IsObject()) {

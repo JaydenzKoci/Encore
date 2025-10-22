@@ -70,18 +70,10 @@ void SettingsGameplay::Draw() {
         const char* body;
     };
     SidebarContent sidebarContents[] = {
-        // sidebar text
-        // fullscreen
         {
             "Fullscreen",
             "TBD"
         },
-        // scan Songs
-        {
-            "Scan Songs",
-            "TBD"
-        },
-
         {
             "Hit Window",
             "TBD"
@@ -104,11 +96,27 @@ void SettingsGameplay::Draw() {
         },
         {
             "Track Fading",
-            "Automatically fade out the track when no notes are present and fade back in when notes approach."
+            "TBD"
         },
         {
-            "Download Tracks",
-            "Download all available tracks from EncoreCustoms repository and extract them to your songs folder."
+            "Video Backgrounds",
+            "TBD"
+        },
+        {
+            "Video Resolution",
+            "TBD"
+        },
+        {
+            "Video Background Fade",
+            "TBD"
+        },
+        {
+            "Scan Songs",
+            "TBD"
+        },
+        {
+            "Download All Tracks",
+            "TBD"
         }
     };
 
@@ -229,7 +237,7 @@ void SettingsGameplay::Draw() {
     DrawTextEx(assets.rubikBold, "Scan Songs", {boxLeft + u.winpct(0.01f), scanSongsTop + (scanButtonHeight - scanSongsTextSize.y) / 2}, EntryFontSize, 0, WHITE);
     Rectangle scanButtonRect = {OptionLeft + OptionWidth - scanButtonWidth, scanSongsTop, scanButtonWidth, scanButtonHeight};
     if (CheckCollisionPointRec(mousePos, scanButtonRect)) {
-        selectedIndex = 1;
+        selectedIndex = 10;
         isHovering = true;
         DrawRectangleLinesEx(scanSongsBoxRect, highlightBorderWidth, glowColor);
     }
@@ -264,7 +272,7 @@ void SettingsGameplay::Draw() {
     Rectangle hitWindowOffButtonRect = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, hideHitWindowTop, toggleButtonWidth, EntryHeight};
     Rectangle hitWindowOnButtonRect = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, hideHitWindowTop, toggleButtonWidth, EntryHeight};
     if (CheckCollisionPointRec(mousePos, hitWindowOffButtonRect) || CheckCollisionPointRec(mousePos, hitWindowOnButtonRect)) {
-        selectedIndex = 2;
+        selectedIndex = 1;
         isHovering = true;
         DrawRectangleLinesEx(hideHitWindowBoxRect, highlightBorderWidth, glowColor);
     }
@@ -299,7 +307,7 @@ void SettingsGameplay::Draw() {
     Rectangle healthBarOffButtonRect = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, showHealthBarTop, toggleButtonWidth, EntryHeight};
     Rectangle healthBarOnButtonRect = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, showHealthBarTop, toggleButtonWidth, EntryHeight};
     if (CheckCollisionPointRec(mousePos, healthBarOffButtonRect) || CheckCollisionPointRec(mousePos, healthBarOnButtonRect)) {
-        selectedIndex = 3;
+        selectedIndex = 2;
         isHovering = true;
         DrawRectangleLinesEx(showHealthBarBoxRect, highlightBorderWidth, glowColor);
     }
@@ -334,7 +342,7 @@ void SettingsGameplay::Draw() {
     Rectangle fpsOffButtonRect = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, hideFPSTop, toggleButtonWidth, EntryHeight};
     Rectangle fpsOnButtonRect = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, hideFPSTop, toggleButtonWidth, EntryHeight};
     if (CheckCollisionPointRec(mousePos, fpsOffButtonRect) || CheckCollisionPointRec(mousePos, fpsOnButtonRect)) {
-        selectedIndex = 4;
+        selectedIndex = 3;
         isHovering = true;
         DrawRectangleLinesEx(hideFPSBoxRect, highlightBorderWidth, glowColor);
     }
@@ -369,7 +377,7 @@ void SettingsGameplay::Draw() {
     Rectangle versionOffButtonRect = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, hideVersionTop, toggleButtonWidth, EntryHeight};
     Rectangle versionOnButtonRect = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, hideVersionTop, toggleButtonWidth, EntryHeight};
     if (CheckCollisionPointRec(mousePos, versionOffButtonRect) || CheckCollisionPointRec(mousePos, versionOnButtonRect)) {
-        selectedIndex = 5;
+        selectedIndex = 4;
         isHovering = true;
         DrawRectangleLinesEx(hideVersionBoxRect, highlightBorderWidth, glowColor);
     }
@@ -410,7 +418,7 @@ void SettingsGameplay::Draw() {
     const char* currentHUDPosition = hudPositionNames[TheGameSettings.HUDPosition % 4];
     
     if (CheckCollisionPointRec(mousePos, hudCycleButtonRect)) {
-        selectedIndex = 6;
+        selectedIndex = 5;
         isHovering = true;
         DrawRectangleLinesEx(hudPositionBoxRect, highlightBorderWidth, glowColor);
     }
@@ -430,7 +438,7 @@ void SettingsGameplay::Draw() {
     Rectangle trackFadingOffButtonRect = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, trackFadingTop, toggleButtonWidth, EntryHeight};
     Rectangle trackFadingOnButtonRect = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, trackFadingTop, toggleButtonWidth, EntryHeight};
     if (CheckCollisionPointRec(mousePos, trackFadingOffButtonRect) || CheckCollisionPointRec(mousePos, trackFadingOnButtonRect)) {
-        selectedIndex = 7;
+        selectedIndex = 6;
         isHovering = true;
         DrawRectangleLinesEx(trackFadingBoxRect, highlightBorderWidth, glowColor);
     }
@@ -468,7 +476,7 @@ void SettingsGameplay::Draw() {
     static std::string downloadStatus = "Download All";
     
     if (CheckCollisionPointRec(mousePos, downloadButtonRect)) {
-        selectedIndex = 8;
+        selectedIndex = 11;
         isHovering = true;
         DrawRectangleLinesEx(downloadTracksBoxRect, highlightBorderWidth, glowColor);
     }
@@ -486,6 +494,111 @@ void SettingsGameplay::Draw() {
         isDownloading = true;
         downloadStatus = "Starting...";
     }
+
+    settingOffset++;
+    float videoBackgroundsTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    Rectangle videoBackgroundsBoxRect = {boxLeft - borderWidth, videoBackgroundsTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, videoBackgroundsTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, videoBackgroundsTop, boxWidth, EntryHeight, boxBackground);
+    Vector2 videoBackgroundsTextSize = MeasureTextEx(assets.rubikBold, "Video Backgrounds", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Video Backgrounds", {boxLeft + u.winpct(0.01f), videoBackgroundsTop + (EntryHeight - videoBackgroundsTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    Rectangle videoBackgroundsOffButtonRect = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, videoBackgroundsTop, toggleButtonWidth, EntryHeight};
+    Rectangle videoBackgroundsOnButtonRect = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, videoBackgroundsTop, toggleButtonWidth, EntryHeight};
+    if (CheckCollisionPointRec(mousePos, videoBackgroundsOffButtonRect) || CheckCollisionPointRec(mousePos, videoBackgroundsOnButtonRect)) {
+        selectedIndex = 7;
+        isHovering = true;
+        DrawRectangleLinesEx(videoBackgroundsBoxRect, highlightBorderWidth, glowColor);
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, !TheGameSettings.VideoBackgrounds ? ColorToInt(activeColor) : defaultColor);
+    if (GuiButton(videoBackgroundsOffButtonRect, "Off")) {
+        if (TheGameSettings.VideoBackgrounds) {
+            TheGameSettings.VideoBackgrounds = false;
+            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+        }
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, TheGameSettings.VideoBackgrounds ? ColorToInt(activeColor) : defaultColor);
+    if (GuiButton(videoBackgroundsOnButtonRect, "On")) {
+        if (!TheGameSettings.VideoBackgrounds) {
+            TheGameSettings.VideoBackgrounds = true;
+            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+        }
+    }
+    if (!TheGameSettings.VideoBackgrounds) {
+        DrawRectangleLinesEx(videoBackgroundsOffButtonRect, highlightBorderWidth, glowColor);
+    } else {
+        DrawRectangleLinesEx(videoBackgroundsOnButtonRect, highlightBorderWidth, glowColor);
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
+
+    settingOffset++;
+    float videoResolutionTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    Rectangle videoResolutionBoxRect = {boxLeft - borderWidth, videoResolutionTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, videoResolutionTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, videoResolutionTop, boxWidth, EntryHeight, boxBackground);
+    Vector2 videoResolutionTextSize = MeasureTextEx(assets.rubikBold, "Video Resolution", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Video Resolution", {boxLeft + u.winpct(0.01f), videoResolutionTop + (EntryHeight - videoResolutionTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    
+    float resolutionCycleButtonWidth = toggleButtonWidth * 2 + toggleOffset;
+    Rectangle videoResolutionCycleButtonRect = {OptionLeft + OptionWidth - resolutionCycleButtonWidth, videoResolutionTop, resolutionCycleButtonWidth, EntryHeight};
+    
+    const char* resolutionNames[] = {"4K", "1080p", "720p", "480p"};
+    const char* currentResolution = resolutionNames[TheGameSettings.VideoBackgroundResolution % 4];
+    
+    if (CheckCollisionPointRec(mousePos, videoResolutionCycleButtonRect)) {
+        selectedIndex = 8;
+        isHovering = true;
+        DrawRectangleLinesEx(videoResolutionBoxRect, highlightBorderWidth, glowColor);
+    }
+    
+    if (GuiButton(videoResolutionCycleButtonRect, currentResolution)) {
+        TheGameSettings.VideoBackgroundResolution = (TheGameSettings.VideoBackgroundResolution + 1) % 4;
+        TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+    }
+
+    settingOffset++;
+    float backgroundFadeTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    Rectangle backgroundFadeBoxRect = {boxLeft - borderWidth, backgroundFadeTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, backgroundFadeTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, backgroundFadeTop, boxWidth, EntryHeight, boxBackground);
+    Vector2 backgroundFadeTextSize = MeasureTextEx(assets.rubikBold, "Background Fade", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Background Fade", {boxLeft + u.winpct(0.01f), backgroundFadeTop + (EntryHeight - backgroundFadeTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    
+    float buttonWidth = toggleButtonWidth;
+    float sliderTotalWidth = (toggleButtonWidth * 2 + toggleOffset) * 1.5f;
+    float adjustedSliderWidth = sliderTotalWidth - (2 * buttonWidth);
+    
+    Rectangle fadeDecButtonRect = {OptionLeft + OptionWidth - sliderTotalWidth, backgroundFadeTop, buttonWidth, EntryHeight};
+    Rectangle fadeSliderRect = {fadeDecButtonRect.x + buttonWidth, backgroundFadeTop, adjustedSliderWidth, EntryHeight};
+    Rectangle fadeIncButtonRect = {fadeSliderRect.x + fadeSliderRect.width, backgroundFadeTop, buttonWidth, EntryHeight};
+    
+    if (CheckCollisionPointRec(mousePos, fadeDecButtonRect) || CheckCollisionPointRec(mousePos, fadeSliderRect) || CheckCollisionPointRec(mousePos, fadeIncButtonRect)) {
+        selectedIndex = 9;
+        isHovering = true;
+        DrawRectangleLinesEx(backgroundFadeBoxRect, highlightBorderWidth, glowColor);
+    }
+    
+    if (GuiButton(fadeDecButtonRect, "-5")) {
+        TheGameSettings.BackgroundFade -= 5;
+        if (TheGameSettings.BackgroundFade < 1) TheGameSettings.BackgroundFade = 1;
+        TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+    }
+    
+    float fadeValue = (float)TheGameSettings.BackgroundFade;
+    GuiSlider(fadeSliderRect, nullptr, nullptr, &fadeValue, 1.0f, 100.0f);
+    TheGameSettings.BackgroundFade = (int)roundf(fadeValue);
+    if (TheGameSettings.BackgroundFade < 1) TheGameSettings.BackgroundFade = 1;
+    if (TheGameSettings.BackgroundFade > 100) TheGameSettings.BackgroundFade = 100;
+    
+    if (GuiButton(fadeIncButtonRect, "+5")) {
+        TheGameSettings.BackgroundFade += 5;
+        if (TheGameSettings.BackgroundFade > 100) TheGameSettings.BackgroundFade = 100;
+        TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+    }
+    
+    std::string percentText = std::to_string(TheGameSettings.BackgroundFade) + "%";
+    float percentFontSize = u.hinpct(0.02f) + 10.0f;
+    Vector2 percentTextSize = MeasureTextEx(assets.rubikBold, percentText.c_str(), percentFontSize, 0);
+    DrawTextEx(assets.rubikBold, percentText.c_str(), {fadeSliderRect.x + (fadeSliderRect.width - percentTextSize.x) / 2, fadeSliderRect.y + (fadeSliderRect.height - percentTextSize.y) / 2}, percentFontSize, 0, WHITE);
 
     if (!isHovering) {
         selectedIndex = 0;
