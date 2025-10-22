@@ -27,6 +27,65 @@
 GameplayMenu::GameplayMenu() {}
 GameplayMenu::~GameplayMenu() {}
 
+void GameplayMenu::CleanupAndSwitchToResults() {
+    TheGameRenderer.backgroundVideo.Stop();
+    TheGameRenderer.backgroundVideo.Unload();
+    
+    TheSongList.curSong->LoadAlbumArt();
+    
+    TheGameRenderer.midiLoaded = false;
+    TheGameRenderer.highwayInAnimation = false;
+    TheGameRenderer.highwayInEndAnim = false;
+    TheGameRenderer.songPlaying = false;
+    TheGameRenderer.highwayLevel = 0;
+    TheGameRenderer.streamsLoaded = false;
+    
+    TheSongTime.Stop();
+    TheSongTime.Reset();
+    
+    TheAudioManager.unloadStreams();
+    
+    for (int playerNum = 0; playerNum < ThePlayerManager.PlayersActive; playerNum++) {
+        Player& player = ThePlayerManager.GetActivePlayer(playerNum);
+        
+        if (TheSongList.curSong && TheSongList.curSong->parts[player.Instrument]) {
+            TheSongList.curSong->parts[player.Instrument]
+                ->charts[player.Difficulty].resetNotes();
+        }
+        
+        if (player.stats) {
+            player.stats->Quit = true;
+            player.stats->Paused = false;
+            player.stats->Overdrive = false;
+            player.stats->Mute = false;
+            player.stats->FAS = false;
+            player.stats->Overstrum = false;
+            player.stats->UpStrum = false;
+            player.stats->DownStrum = false;
+            player.stats->StrumNoFretTime = -1.0;
+            
+            std::fill(player.stats->HeldFrets.begin(), player.stats->HeldFrets.end(), false);
+            std::fill(player.stats->HeldFretsAlt.begin(), player.stats->HeldFretsAlt.end(), false);
+            std::fill(player.stats->OverhitFrets.begin(), player.stats->OverhitFrets.end(), false);
+            std::fill(player.stats->TapRegistered.begin(), player.stats->TapRegistered.end(), false);
+            std::fill(player.stats->LiftRegistered.begin(), player.stats->LiftRegistered.end(), false);
+            std::fill(player.stats->overdriveLanesHit.begin(), player.stats->overdriveLanesHit.end(), false);
+            
+            std::fill(player.stats->axesValues.begin(), player.stats->axesValues.end(), 0.0f);
+            std::fill(player.stats->buttonValues.begin(), player.stats->buttonValues.end(), 0);
+            std::fill(player.stats->axesValues2.begin(), player.stats->axesValues2.end(), 0.0f);
+        }
+    }
+    
+    if (ThePlayerManager.BandStats) {
+        ThePlayerManager.BandStats->ResetBandGameplayStats();
+        ThePlayerManager.BandStats->Paused = false;
+        ThePlayerManager.BandStats->PlayersInOverdrive = 0;
+    }
+    
+    TheMenuManager.SwitchScreen(RESULTS);
+}
+
 void ManagePausedGame(GameplayInputHandler inputHandler, Player &player) {
     PlayerGameplayStats *&stats = player.stats;
     stats->Paused = !stats->Paused;
@@ -613,18 +672,8 @@ void GameplayMenu::Draw() {
             TheGameRenderer.LowerHighway();
         }
         if (TheSongTime.SongComplete()) {
-            TheGameRenderer.backgroundVideo.Unload();
-            TheSongList.curSong->LoadAlbumArt();
-            TheGameRenderer.midiLoaded = false;
-            TheGameRenderer.highwayInAnimation = false;
-            TheGameRenderer.songPlaying = false;
-            TheGameRenderer.highwayLevel = 0;
-            TheSongTime.Stop();
-            if (TheGameRenderer.streamsLoaded) {
-                TheAudioManager.unloadStreams();
-                TheGameRenderer.streamsLoaded = false;
-            }
-            TheMenuManager.SwitchScreen(RESULTS);
+            float songPlayed = TheSongTime.GetSongLength();
+            CleanupAndSwitchToResults();
             Encore::EncoreLog(LOG_INFO, TextFormat("Song ended at at %f", songPlayed));
             return;
         }
@@ -936,25 +985,7 @@ void GameplayMenu::Draw() {
             ThePlayerManager.BandStats->Paused = false;
         }
         if (GuiButton(QuitBox, "Back to Music Library")) {
-            TheGameRenderer.backgroundVideo.Unload();
-            TheSongList.curSong->LoadAlbumArt();
-            ThePlayerManager.BandStats->ResetBandGameplayStats();
-            TheGameRenderer.midiLoaded = false;
-            TheSongTime.Reset();
-
-            TheAudioManager.unloadStreams();
-            TheGameRenderer.highwayInAnimation = false;
-            TheGameRenderer.highwayInEndAnim = false;
-            TheGameRenderer.songPlaying = false;
-            for (int playerNum = 0; playerNum < ThePlayerManager.PlayersActive;
-                 playerNum++) {
-                TheSongList.curSong
-                    ->parts[ThePlayerManager.GetActivePlayer(playerNum).Instrument]
-                    ->charts[ThePlayerManager.GetActivePlayer(playerNum).Difficulty]
-                    .resetNotes();
-                ThePlayerManager.GetActivePlayer(playerNum).stats->Quit = true;
-            }
-            TheMenuManager.SwitchScreen(RESULTS);
+            CleanupAndSwitchToResults();
             SETDEFAULTSTYLE();
             return;
         }
@@ -1040,22 +1071,7 @@ void GameplayMenu::Draw() {
 
     if (!ThePlayerManager.BandStats->Multiplayer
         && ThePlayerManager.GetActivePlayer(0).stats->Health <= 0) {
-        TheGameRenderer.backgroundVideo.Unload();
-        TheSongList.curSong->LoadAlbumArt();
-        ThePlayerManager.BandStats->ResetBandGameplayStats();
-        TheGameRenderer.midiLoaded = false;
-        TheSongTime.Reset();
-
-        TheAudioManager.unloadStreams();
-        TheGameRenderer.highwayInAnimation = false;
-        TheGameRenderer.highwayInEndAnim = false;
-        TheGameRenderer.songPlaying = false;
-
-        TheSongList.curSong->parts[ThePlayerManager.GetActivePlayer(0).Instrument]
-            ->charts[ThePlayerManager.GetActivePlayer(0).Difficulty]
-            .resetNotes();
-        ThePlayerManager.GetActivePlayer(0).stats->Quit = true;
-        TheMenuManager.SwitchScreen(RESULTS);
+        CleanupAndSwitchToResults();
     }
 
     extern Encore::Settings TheGameSettings;

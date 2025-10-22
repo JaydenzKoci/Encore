@@ -34,4 +34,5 @@ public:
     void ControllerInputCallback(int joypadID, GLFWgamepadstate state);
     void Draw() override;
     void Load() override;
+    void CleanupAndSwitchToResults();
 };
