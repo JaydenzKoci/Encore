@@ -90,27 +90,23 @@ void ManagePausedGame(GameplayInputHandler inputHandler, Player &player) {
     PlayerGameplayStats *&stats = player.stats;
     stats->Paused = !stats->Paused;
     ThePlayerManager.BandStats->Paused = !ThePlayerManager.BandStats->Paused;
+    
     if (ThePlayerManager.BandStats->Paused) {
+        Encore::EncoreLog(LOG_INFO, TextFormat("PAUSED at songTime=%.2f s", TheSongTime.GetSongTime()));
+        
         TheAudioManager.pauseStreams();
         TheSongTime.Pause();
         TheGameRenderer.backgroundVideo.Pause();
     } else {
-        TheAudioManager.unpauseStreams();
-        TheSongTime.Resume();
-        
-        if (TheGameRenderer.backgroundVideo.IsLoaded()) {
-            double currentSongTime = TheSongTime.GetSongTime();
-            double videoSeekTimeMs = currentSongTime * 1000.0;
-            
-            if (TheSongList.curSong && TheSongList.curSong->videoStartTime > 0) {
-                videoSeekTimeMs = videoSeekTimeMs - TheSongList.curSong->videoStartTime;
-            }
-            if (videoSeekTimeMs < 0) videoSeekTimeMs = 0;
-            
-            TheGameRenderer.backgroundVideo.Seek(videoSeekTimeMs);
-            TheGameRenderer.backgroundVideo.Resume();
+        if (TheSongTime.IsInResumeGracePeriod()) {
+            Encore::EncoreLog(LOG_INFO, "UNPAUSING during grace period - extending by 3 seconds");
+            TheSongTime.ExtendGracePeriod();
+        } else {
+            Encore::EncoreLog(LOG_INFO, "UNPAUSING - starting 3-second grace period");
+            TheSongTime.Resume();
         }
         
+        TheAudioManager.unpauseStreams();
         TheGameRenderer.ClearHeldInputs(player);
     }
 }
@@ -618,10 +614,18 @@ void GameplayMenu::Draw() {
 
     ClearBackground(BLACK);
 
+    if (TheSongTime.ShouldResumeVideoAfterGracePeriod() && TheGameRenderer.backgroundVideo.IsLoaded()) {
+        Encore::EncoreLog(LOG_INFO, "Grace period ended - resuming video playback");
+        TheGameRenderer.backgroundVideo.Play();
+        TheSongTime.SetVideoResumedAfterGracePeriod(true);
+    }
+
     TheGameRenderer.backgroundVideo.Update();
 
     if (TheGameRenderer.backgroundVideo.IsLoaded()) {
-        if (TheGameRenderer.backgroundVideo.HasEnded() || TheSongTime.IsInResumeGracePeriod()) {
+        if (TheSongTime.IsInResumeGracePeriod()) {
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
+        } else if (TheGameRenderer.backgroundVideo.HasEnded()) {
             DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), BLACK);
         } else {
             float totalAlpha = 0.0f;
@@ -1035,9 +1039,12 @@ void GameplayMenu::Draw() {
         Rectangle QuitBox = { Left, Top + (Spacing * 2), Width, Height };
 
         if (GuiButton(ResumeBox, "Resume")) {
+            if (TheSongTime.IsInResumeGracePeriod()) {
+                TheSongTime.ExtendGracePeriod();
+            } else {
+                TheSongTime.Resume();
+            }
             TheAudioManager.unpauseStreams();
-            TheSongTime.Resume();
-            TheGameRenderer.backgroundVideo.Resume();
             
             ThePlayerManager.BandStats->Paused = false;
             for (int playerNum = 0; playerNum < ThePlayerManager.PlayersActive;
@@ -1205,25 +1212,29 @@ void GameplayMenu::Draw() {
             float leftInputBoxSize = (5 * u.winpct(0.02f)) / 2;
 
             Color fretColor;
-            switch (fretBox) {
-            default:
-                fretColor = BROWN;
-                break;
-            case (0):
-                fretColor = GREEN;
-                break;
-            case (1):
-                fretColor = RED;
-                break;
-            case (2):
-                fretColor = YELLOW;
-                break;
-            case (3):
-                fretColor = BLUE;
-                break;
-            case (4):
-                fretColor = ORANGE;
-                break;
+            if (TheGameSettings.ClassicNotesOnPad) {
+                switch (fretBox) {
+                default:
+                    fretColor = BROWN;
+                    break;
+                case (0):
+                    fretColor = GREEN;
+                    break;
+                case (1):
+                    fretColor = RED;
+                    break;
+                case (2):
+                    fretColor = YELLOW;
+                    break;
+                case (3):
+                    fretColor = BLUE;
+                    break;
+                case (4):
+                    fretColor = ORANGE;
+                    break;
+                }
+            } else {
+                fretColor = ThePlayerManager.GetActivePlayer(0).AccentColor;
             }
 
             DrawRectangle(
@@ -1249,6 +1260,55 @@ void GameplayMenu::Draw() {
             u.winpct(0.01f),
             ThePlayerManager.GetActivePlayer(0).stats->DownStrum ? WHITE : GRAY
         );
+    }
+    
+    if (TheGameSettings.ShowDebugTimers) {
+        double trackTime = TheSongTime.GetSongTime();
+        double videoTime = 0.0;
+        if (TheGameRenderer.backgroundVideo.IsLoaded()) {
+            videoTime = TheGameRenderer.backgroundVideo.GetCurrentPositionMs() / 1000.0;
+        }
+        
+        float fontSize = u.hinpct(0.025f);
+        float rightMargin = u.wpct(0.02f);
+        float topMargin = u.hpct(0.15f);
+        float lineHeight = fontSize * 1.3f;
+        
+        const char* trackTimeText = TextFormat("Track: %.3fs", trackTime);
+        const char* videoTimeText = TextFormat("Video: %.3fs", videoTime);
+        const char* diffText = TextFormat("Diff: %.3fs", trackTime - videoTime);
+        
+        Vector2 trackTimeSize = MeasureTextEx(assets.rubikBold, trackTimeText, fontSize, 0);
+        Vector2 videoTimeSize = MeasureTextEx(assets.rubikBold, videoTimeText, fontSize, 0);
+        Vector2 diffSize = MeasureTextEx(assets.rubikBold, diffText, fontSize, 0);
+        
+        float maxWidth = trackTimeSize.x;
+        if (videoTimeSize.x > maxWidth) maxWidth = videoTimeSize.x;
+        if (diffSize.x > maxWidth) maxWidth = diffSize.x;
+        
+        float boxWidth = maxWidth + u.winpct(0.02f);
+        float boxHeight = lineHeight * 3 + u.hinpct(0.02f);
+        float boxX = GetScreenWidth() - boxWidth - rightMargin;
+        float boxY = topMargin;
+        
+        DrawRectangle(boxX, boxY, boxWidth, boxHeight, Color{0, 0, 0, 180});
+        DrawRectangleLinesEx({boxX, boxY, boxWidth, boxHeight}, 2.0f, WHITE);
+        
+        float textX = boxX + u.winpct(0.01f);
+        float textY = boxY + u.hinpct(0.01f);
+        
+        DrawTextEx(assets.rubikBold, trackTimeText, {textX, textY}, fontSize, 0, WHITE);
+        textY += lineHeight;
+        DrawTextEx(assets.rubikBold, videoTimeText, {textX, textY}, fontSize, 0, WHITE);
+        textY += lineHeight;
+        
+        Color diffColor = WHITE;
+        float diff = trackTime - videoTime;
+        if (diff > 0.1f) diffColor = RED;
+        else if (diff < -0.1f) diffColor = YELLOW;
+        else diffColor = GREEN;
+        
+        DrawTextEx(assets.rubikBold, diffText, {textX, textY}, fontSize, 0, diffColor);
     }
 }
 

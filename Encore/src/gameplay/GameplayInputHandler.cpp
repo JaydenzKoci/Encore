@@ -7,6 +7,7 @@
 #include "settings-old.h"
 #include "GLFW/glfw3.h"
 #include "song/songlist.h"
+#include "gameplayRenderer.h"
 
 int GameplayInputHandler::calculatePressedMask(PlayerGameplayStats *&stats) {
     int mask = 0;
@@ -117,6 +118,7 @@ void GameplayInputHandler::CheckPlasticInputs(
         curNote.cHitNote(eventTime, player.InputCalibration);
         // TODO: fix for plastic
         stats->HitPlasticNote(curNote);
+        
         ThePlayerManager.BandStats->AddClassicNotePoint(
             curNote.perfect, stats->noODmultiplier(), curNote.chordSize
         );
@@ -215,6 +217,7 @@ void GameplayInputHandler::CheckPadInputs(
     if (InHitwindow && (NotePressed || NoteLifted) && lane == curNote.lane) {
         curNote.padHitNote(eventTime, player.InputCalibration);
         stats->HitNote(curNote.perfect);
+        
         if (curNote.lift && action == GLFW_RELEASE) {
             stats->lastHitLifts[lane] =
                 curChart.notes_perlane[lane][stats->curNoteIdx[lane]];

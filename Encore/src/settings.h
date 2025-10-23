@@ -33,7 +33,9 @@
     OPTION(bool, TrackFading, true)                                                  \
     OPTION(bool, VideoBackgrounds, true)                                                \
     OPTION(int, VideoBackgroundResolution, 0)                                           \
-    OPTION(int, BackgroundFade, 75)
+    OPTION(int, BackgroundFade, 75)                                                     \
+    OPTION(bool, ClassicNotesOnPad, false)                                              \
+    OPTION(bool, ShowDebugTimers, false)
 namespace Encore {
     inline void WriteJsonFile(const std::filesystem::path &FileToWrite, const nlohmann::json &JSONobject) {
         std::ofstream o(FileToWrite, std::ios::out | std::ios::trunc);
@@ -73,7 +75,9 @@ namespace Encore {
         TrackFading,
         VideoBackgrounds,
         VideoBackgroundResolution,
-        BackgroundFade
+        BackgroundFade,
+        ClassicNotesOnPad,
+        ShowDebugTimers
     );
 
     class SettingsInit {

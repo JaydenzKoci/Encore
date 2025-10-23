@@ -527,10 +527,10 @@ void gameplayRenderer::RenderPadNotes(
             NotesToRender++;
             // if (NotesToRender > 60) break;
 
-            Color NoteColor = player.AccentColor;
-            // TheGameMenu.hehe && player.Difficulty == 3
-            //? TRANS[lane]
-            //: player.AccentColor;
+            extern Encore::Settings TheGameSettings;
+            Color NoteColor = (TheGameSettings.ClassicNotesOnPad && player.Difficulty == 3) 
+                ? GRYBO[lane] 
+                : player.AccentColor;
 
             // if (curNote.hit) {
             //	player.stats->totalOffset += curNote.HitOffset;
@@ -1459,7 +1459,8 @@ void gameplayRenderer::DrawSmashers(Player &player) {
     for (int i = 0; i < (player.Difficulty == 3 || player.ClassicMode ? 5 : 4); i++) {
         Color NoteColor;
         int noteColor = player.LeftyFlip ? (player.Difficulty || player.ClassicMode == 3 ? 4 : 3) - i : i;
-        if (player.ClassicMode) {
+        extern Encore::Settings TheGameSettings;
+        if (player.ClassicMode || (TheGameSettings.ClassicNotesOnPad && player.Difficulty == 3)) {
             NoteColor = GRYBO[i];
         } else {
             NoteColor = player.AccentColor;

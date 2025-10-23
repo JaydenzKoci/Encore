@@ -73,52 +73,62 @@ void SettingsAudioVideo::Draw() {
         // Volume
         {
             "Volume Settings",
-            "Placeholder"
+            "TBD"
         },
         // Main Output
         {
             "Main Output Volume",
-            "Placeholder"
+            "TBD"
         },
         // Active Instrument
         {
             "Active Instrument Volume",
-            "Placeholder"
+            "TBD"
         },
         // Inactive Instrument
         {
             "Inactive Instrument Volume",
-            "Placeholder"
+            "TBD"
         },
         // Mute Instrument
         {
             "Mute Instrument Volume",
-            "Placeholder"
+            "TBD"
         },
         // Menu Music
         {
             "Menu Music Volume",
-            "Placeholder"
+            "TBD"
         },
         // Sound Effects
         {
             "Sound Effects Volume",
-            "Placeholder"
+            "TBD"
         },
         // Background Beat Flash
         {
             "Background Beat Flash",
-            "Placeholder"
+            "TBD"
         },
         // Framerate
         {
             "Framerate",
-            "Placeholder"
+            "TBD"
         },
         // V-Sync
         {
             "V-Sync",
-            "Placeholder"
+            "TBD"
+        },
+        // Video Resolution
+        {
+            "Video Resolution",
+            "TBD"
+        },
+        // Background Fade
+        {
+            "Background Fade",
+            "TBD"
         }
     };
 
@@ -524,6 +534,82 @@ void SettingsAudioVideo::Draw() {
         DrawRectangleLinesEx(onButtonRect2, highlightBorderWidth, glowColor);
     }
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
+
+    settingOffset++;
+    float videoResolutionTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    if (showVolumeSettings) {
+        videoResolutionTop += verticalSubmenuGap - 7.0f;
+    }
+    Rectangle videoResolutionBoxRect = {boxLeft - borderWidth, videoResolutionTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, videoResolutionTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, videoResolutionTop, boxWidth, EntryHeight, boxBackground);
+    Vector2 videoResolutionTextSize = MeasureTextEx(assets.rubikBold, "Video Resolution", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Video Resolution", {boxLeft + u.winpct(0.01f), videoResolutionTop + (EntryHeight - videoResolutionTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    
+    float resolutionCycleButtonWidth = toggleButtonWidth * 2 + toggleOffset;
+    Rectangle videoResolutionCycleButtonRect = {OptionLeft + OptionWidth - resolutionCycleButtonWidth, videoResolutionTop, resolutionCycleButtonWidth, buttonHeight};
+    
+    const char* resolutionNames[] = {"4K", "1080p", "720p", "480p"};
+    const char* currentResolution = resolutionNames[TheGameSettings.VideoBackgroundResolution % 4];
+    
+    if (CheckCollisionPointRec(mousePos, videoResolutionCycleButtonRect)) {
+        selectedIndex = 11;
+        isHovering = true;
+        DrawRectangleLinesEx(videoResolutionBoxRect, highlightBorderWidth, glowColor);
+    }
+    
+    if (GuiButton(videoResolutionCycleButtonRect, currentResolution)) {
+        TheGameSettings.VideoBackgroundResolution = (TheGameSettings.VideoBackgroundResolution + 1) % 4;
+        TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+    }
+
+    settingOffset++;
+    float backgroundFadeTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    if (showVolumeSettings) {
+        backgroundFadeTop += verticalSubmenuGap - 7.0f;
+    }
+    Rectangle backgroundFadeBoxRect = {boxLeft - borderWidth, backgroundFadeTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, backgroundFadeTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, backgroundFadeTop, boxWidth, EntryHeight, boxBackground);
+    Vector2 backgroundFadeTextSize = MeasureTextEx(assets.rubikBold, "Background Fade", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Background Fade", {boxLeft + u.winpct(0.01f), backgroundFadeTop + (EntryHeight - backgroundFadeTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    
+    float fadeButtonWidth = buttonWidth15;
+    float fadeTotalWidth = sliderTotalWidth;
+    float fadeSliderWidth = adjustedSliderWidth;
+    
+    Rectangle fadeDecButtonRect = {OptionLeft + OptionWidth - fadeTotalWidth, backgroundFadeTop, fadeButtonWidth, buttonHeight};
+    Rectangle fadeSliderRect = {fadeDecButtonRect.x + fadeButtonWidth, backgroundFadeTop, fadeSliderWidth, buttonHeight};
+    Rectangle fadeIncButtonRect = {fadeSliderRect.x + fadeSliderRect.width, backgroundFadeTop, buttonWidth15Inc, buttonHeight};
+    
+    if (CheckCollisionPointRec(mousePos, fadeDecButtonRect) || CheckCollisionPointRec(mousePos, fadeSliderRect) || CheckCollisionPointRec(mousePos, fadeIncButtonRect)) {
+        selectedIndex = 12;
+        isHovering = true;
+        DrawRectangleLinesEx(backgroundFadeBoxRect, highlightBorderWidth, glowColor);
+    }
+    
+    if (GuiButton(fadeDecButtonRect, "-5")) {
+        TheGameSettings.BackgroundFade -= 5;
+        if (TheGameSettings.BackgroundFade < 1) TheGameSettings.BackgroundFade = 1;
+        TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+    }
+    
+    float fadeValue = (float)TheGameSettings.BackgroundFade;
+    ::GuiSlider(fadeSliderRect, nullptr, nullptr, &fadeValue, 1.0f, 100.0f);
+    TheGameSettings.BackgroundFade = (int)roundf(fadeValue);
+    if (TheGameSettings.BackgroundFade < 1) TheGameSettings.BackgroundFade = 1;
+    if (TheGameSettings.BackgroundFade > 100) TheGameSettings.BackgroundFade = 100;
+    
+    if (GuiButton(fadeIncButtonRect, "+5")) {
+        TheGameSettings.BackgroundFade += 5;
+        if (TheGameSettings.BackgroundFade > 100) TheGameSettings.BackgroundFade = 100;
+        TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+    }
+    
+    std::string percentText = std::to_string(TheGameSettings.BackgroundFade) + "%";
+    float percentFontSize = u.hinpct(0.02f) + 10.0f;
+    Vector2 percentTextSize = MeasureTextEx(assets.rubikBold, percentText.c_str(), percentFontSize, 0);
+    DrawTextEx(assets.rubikBold, percentText.c_str(), {fadeSliderRect.x + (fadeSliderRect.width - percentTextSize.x) / 2, fadeSliderRect.y + (fadeSliderRect.height - percentTextSize.y) / 2}, percentFontSize, 0, WHITE);
 
     if (!isHovering) {
         selectedIndex = 0;

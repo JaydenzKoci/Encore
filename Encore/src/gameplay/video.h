@@ -302,6 +302,12 @@ public:
 
     bool IsLoaded() const { return isLoaded; }
     bool HasEnded() const { return hasEnded; }
+    double GetCurrentPositionMs() const {
+        if (!isLoaded || !isPlaying) return 0.0;
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - playStartTime).count();
+        return elapsed - startDelayMs;
+    }
 
 private:
     void DecodeLoop() {

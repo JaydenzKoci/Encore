@@ -103,11 +103,7 @@ void SettingsGameplay::Draw() {
             "TBD"
         },
         {
-            "Video Resolution",
-            "TBD"
-        },
-        {
-            "Video Background Fade",
+            "Classic Notes on Pad",
             "TBD"
         },
         {
@@ -116,6 +112,10 @@ void SettingsGameplay::Draw() {
         },
         {
             "Download All Tracks",
+            "TBD"
+        },
+        {
+            "Debug Timers",
             "TBD"
         }
     };
@@ -237,7 +237,7 @@ void SettingsGameplay::Draw() {
     DrawTextEx(assets.rubikBold, "Scan Songs", {boxLeft + u.winpct(0.01f), scanSongsTop + (scanButtonHeight - scanSongsTextSize.y) / 2}, EntryFontSize, 0, WHITE);
     Rectangle scanButtonRect = {OptionLeft + OptionWidth - scanButtonWidth, scanSongsTop, scanButtonWidth, scanButtonHeight};
     if (CheckCollisionPointRec(mousePos, scanButtonRect)) {
-        selectedIndex = 10;
+        selectedIndex = 8;
         isHovering = true;
         DrawRectangleLinesEx(scanSongsBoxRect, highlightBorderWidth, glowColor);
     }
@@ -476,7 +476,7 @@ void SettingsGameplay::Draw() {
     static std::string downloadStatus = "Download All";
     
     if (CheckCollisionPointRec(mousePos, downloadButtonRect)) {
-        selectedIndex = 11;
+        selectedIndex = 9;
         isHovering = true;
         DrawRectangleLinesEx(downloadTracksBoxRect, highlightBorderWidth, glowColor);
     }
@@ -531,74 +531,74 @@ void SettingsGameplay::Draw() {
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
 
     settingOffset++;
-    float videoResolutionTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
-    Rectangle videoResolutionBoxRect = {boxLeft - borderWidth, videoResolutionTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
-    DrawRectangle(boxLeft - borderWidth, videoResolutionTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
-    DrawRectangle(boxLeft, videoResolutionTop, boxWidth, EntryHeight, boxBackground);
-    Vector2 videoResolutionTextSize = MeasureTextEx(assets.rubikBold, "Video Resolution", EntryFontSize, 0);
-    DrawTextEx(assets.rubikBold, "Video Resolution", {boxLeft + u.winpct(0.01f), videoResolutionTop + (EntryHeight - videoResolutionTextSize.y) / 2}, EntryFontSize, 0, WHITE);
-    
-    float resolutionCycleButtonWidth = toggleButtonWidth * 2 + toggleOffset;
-    Rectangle videoResolutionCycleButtonRect = {OptionLeft + OptionWidth - resolutionCycleButtonWidth, videoResolutionTop, resolutionCycleButtonWidth, EntryHeight};
-    
-    const char* resolutionNames[] = {"4K", "1080p", "720p", "480p"};
-    const char* currentResolution = resolutionNames[TheGameSettings.VideoBackgroundResolution % 4];
-    
-    if (CheckCollisionPointRec(mousePos, videoResolutionCycleButtonRect)) {
-        selectedIndex = 8;
+    float classicNotesTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    Rectangle classicNotesBoxRect = {boxLeft - borderWidth, classicNotesTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, classicNotesTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, classicNotesTop, boxWidth, EntryHeight, boxBackground);
+    Vector2 classicNotesTextSize = MeasureTextEx(assets.rubikBold, "Classic Notes on Pad", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Classic Notes on Pad", {boxLeft + u.winpct(0.01f), classicNotesTop + (EntryHeight - classicNotesTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    Rectangle classicNotesOffButtonRect = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, classicNotesTop, toggleButtonWidth, EntryHeight};
+    Rectangle classicNotesOnButtonRect = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, classicNotesTop, toggleButtonWidth, EntryHeight};
+    if (CheckCollisionPointRec(mousePos, classicNotesOffButtonRect) || CheckCollisionPointRec(mousePos, classicNotesOnButtonRect)) {
+        selectedIndex = 7;
         isHovering = true;
-        DrawRectangleLinesEx(videoResolutionBoxRect, highlightBorderWidth, glowColor);
+        DrawRectangleLinesEx(classicNotesBoxRect, highlightBorderWidth, glowColor);
     }
-    
-    if (GuiButton(videoResolutionCycleButtonRect, currentResolution)) {
-        TheGameSettings.VideoBackgroundResolution = (TheGameSettings.VideoBackgroundResolution + 1) % 4;
-        TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, !TheGameSettings.ClassicNotesOnPad ? ColorToInt(activeColor) : defaultColor);
+    if (GuiButton(classicNotesOffButtonRect, "Off")) {
+        if (TheGameSettings.ClassicNotesOnPad) {
+            TheGameSettings.ClassicNotesOnPad = false;
+            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+        }
     }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, TheGameSettings.ClassicNotesOnPad ? ColorToInt(activeColor) : defaultColor);
+    if (GuiButton(classicNotesOnButtonRect, "On")) {
+        if (!TheGameSettings.ClassicNotesOnPad) {
+            TheGameSettings.ClassicNotesOnPad = true;
+            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+        }
+    }
+    if (!TheGameSettings.ClassicNotesOnPad) {
+        DrawRectangleLinesEx(classicNotesOffButtonRect, highlightBorderWidth, glowColor);
+    } else {
+        DrawRectangleLinesEx(classicNotesOnButtonRect, highlightBorderWidth, glowColor);
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
 
     settingOffset++;
-    float backgroundFadeTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
-    Rectangle backgroundFadeBoxRect = {boxLeft - borderWidth, backgroundFadeTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
-    DrawRectangle(boxLeft - borderWidth, backgroundFadeTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
-    DrawRectangle(boxLeft, backgroundFadeTop, boxWidth, EntryHeight, boxBackground);
-    Vector2 backgroundFadeTextSize = MeasureTextEx(assets.rubikBold, "Background Fade", EntryFontSize, 0);
-    DrawTextEx(assets.rubikBold, "Background Fade", {boxLeft + u.winpct(0.01f), backgroundFadeTop + (EntryHeight - backgroundFadeTextSize.y) / 2}, EntryFontSize, 0, WHITE);
-    
-    float buttonWidth = toggleButtonWidth;
-    float sliderTotalWidth = (toggleButtonWidth * 2 + toggleOffset) * 1.5f;
-    float adjustedSliderWidth = sliderTotalWidth - (2 * buttonWidth);
-    
-    Rectangle fadeDecButtonRect = {OptionLeft + OptionWidth - sliderTotalWidth, backgroundFadeTop, buttonWidth, EntryHeight};
-    Rectangle fadeSliderRect = {fadeDecButtonRect.x + buttonWidth, backgroundFadeTop, adjustedSliderWidth, EntryHeight};
-    Rectangle fadeIncButtonRect = {fadeSliderRect.x + fadeSliderRect.width, backgroundFadeTop, buttonWidth, EntryHeight};
-    
-    if (CheckCollisionPointRec(mousePos, fadeDecButtonRect) || CheckCollisionPointRec(mousePos, fadeSliderRect) || CheckCollisionPointRec(mousePos, fadeIncButtonRect)) {
-        selectedIndex = 9;
+    float debugTimersTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    Rectangle debugTimersBoxRect = {boxLeft - borderWidth, debugTimersTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, debugTimersTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, debugTimersTop, boxWidth, EntryHeight, boxBackground);
+    Vector2 debugTimersTextSize = MeasureTextEx(assets.rubikBold, "Debug Timers", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Debug Timers", {boxLeft + u.winpct(0.01f), debugTimersTop + (EntryHeight - debugTimersTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    Rectangle debugTimersOffButtonRect = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, debugTimersTop, toggleButtonWidth, EntryHeight};
+    Rectangle debugTimersOnButtonRect = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, debugTimersTop, toggleButtonWidth, EntryHeight};
+    if (CheckCollisionPointRec(mousePos, debugTimersOffButtonRect) || CheckCollisionPointRec(mousePos, debugTimersOnButtonRect)) {
+        selectedIndex = 11;
         isHovering = true;
-        DrawRectangleLinesEx(backgroundFadeBoxRect, highlightBorderWidth, glowColor);
+        DrawRectangleLinesEx(debugTimersBoxRect, highlightBorderWidth, glowColor);
     }
-    
-    if (GuiButton(fadeDecButtonRect, "-5")) {
-        TheGameSettings.BackgroundFade -= 5;
-        if (TheGameSettings.BackgroundFade < 1) TheGameSettings.BackgroundFade = 1;
-        TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, !TheGameSettings.ShowDebugTimers ? ColorToInt(activeColor) : defaultColor);
+    if (GuiButton(debugTimersOffButtonRect, "Off")) {
+        if (TheGameSettings.ShowDebugTimers) {
+            TheGameSettings.ShowDebugTimers = false;
+            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+        }
     }
-    
-    float fadeValue = (float)TheGameSettings.BackgroundFade;
-    GuiSlider(fadeSliderRect, nullptr, nullptr, &fadeValue, 1.0f, 100.0f);
-    TheGameSettings.BackgroundFade = (int)roundf(fadeValue);
-    if (TheGameSettings.BackgroundFade < 1) TheGameSettings.BackgroundFade = 1;
-    if (TheGameSettings.BackgroundFade > 100) TheGameSettings.BackgroundFade = 100;
-    
-    if (GuiButton(fadeIncButtonRect, "+5")) {
-        TheGameSettings.BackgroundFade += 5;
-        if (TheGameSettings.BackgroundFade > 100) TheGameSettings.BackgroundFade = 100;
-        TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, TheGameSettings.ShowDebugTimers ? ColorToInt(activeColor) : defaultColor);
+    if (GuiButton(debugTimersOnButtonRect, "On")) {
+        if (!TheGameSettings.ShowDebugTimers) {
+            TheGameSettings.ShowDebugTimers = true;
+            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+        }
     }
-    
-    std::string percentText = std::to_string(TheGameSettings.BackgroundFade) + "%";
-    float percentFontSize = u.hinpct(0.02f) + 10.0f;
-    Vector2 percentTextSize = MeasureTextEx(assets.rubikBold, percentText.c_str(), percentFontSize, 0);
-    DrawTextEx(assets.rubikBold, percentText.c_str(), {fadeSliderRect.x + (fadeSliderRect.width - percentTextSize.x) / 2, fadeSliderRect.y + (fadeSliderRect.height - percentTextSize.y) / 2}, percentFontSize, 0, WHITE);
+    if (!TheGameSettings.ShowDebugTimers) {
+        DrawRectangleLinesEx(debugTimersOffButtonRect, highlightBorderWidth, glowColor);
+    } else {
+        DrawRectangleLinesEx(debugTimersOnButtonRect, highlightBorderWidth, glowColor);
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
 
     if (!isHovering) {
         selectedIndex = 0;

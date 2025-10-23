@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+#include "util/enclog.h"
+
 SongTime TheSongTime;
 
 void SongTime::SetOffset(double audioCalibration) {
@@ -13,9 +15,12 @@ void SongTime::Reset() {
     pauseTime = 0.0;
     pausedSongPosition = 0.0;
     resumeTargetTime = 0.0;
+    actualResumeTime = 0.0;
     running = false;
     paused = false;
     inResumeGracePeriod = false;
+    videoResumedAfterGracePeriod = false;
+    gracePeriodJustEnded = false;
 }
 // start at audio beginning
 void SongTime::Start(double end) {
@@ -53,16 +58,46 @@ void SongTime::Pause() {
 
 void SongTime::Resume() {
     if (!running && paused) {
-        double resumeGracePeriod = 3.0;
-        double resumeStartPosition = pausedSongPosition - resumeGracePeriod;
-
-        if (resumeStartPosition < 0.0) {
-            resumeStartPosition = 0.0;
-        }
-
-        startTime = GetTime() - resumeStartPosition + aCalib;
+        double rewindPosition = pausedSongPosition - rewindAmount;
+        if (rewindPosition < 0.0) rewindPosition = 0.0;
+        
+        startTime = GetTime() - rewindPosition + aCalib;
         resumeTargetTime = pausedSongPosition;
+        actualResumeTime = GetTime();
         inResumeGracePeriod = true;
+        videoResumedAfterGracePeriod = false;
+        gracePeriodJustEnded = false;
+        
+        pauseTime = 0.0;
+        running = true;
+        paused = false;
+    }
+};
+
+void SongTime::ContinueFromPause() {
+    if (!running && paused) {
+        startTime = GetTime() - pausedSongPosition + aCalib;
+        
+        pauseTime = 0.0;
+        running = true;
+        paused = false;
+    }
+};
+
+void SongTime::ExtendGracePeriod() {
+    if (!running && paused && inResumeGracePeriod) {
+        double currentSongTime = pausedSongPosition;
+        double remainingTime = resumeTargetTime - currentSongTime;
+        if (remainingTime < 0) remainingTime = 0;
+        
+        double newTarget = currentSongTime + remainingTime + rewindAmount;
+        
+        Encore::EncoreLog(LOG_INFO, TextFormat("Extending grace period: current=%.2f, remaining=%.2f, oldTarget=%.2f, newTarget=%.2f", 
+            currentSongTime, remainingTime, resumeTargetTime, newTarget));
+        
+        resumeTargetTime = newTarget;
+        
+        startTime = GetTime() - pausedSongPosition + aCalib;
         
         pauseTime = 0.0;
         running = true;
@@ -87,6 +122,7 @@ double SongTime::GetSongTime() {
 
         if (inResumeGracePeriod && currentTime >= resumeTargetTime) {
             inResumeGracePeriod = false;
+            gracePeriodJustEnded = true;
         }
         
         return currentTime;
@@ -127,4 +163,20 @@ double SongTime::GetPausedSongPosition() {
 
 double SongTime::GetResumeTargetTime() {
     return resumeTargetTime;
+}
+
+double SongTime::GetActualResumeTime() {
+    return actualResumeTime;
+}
+
+bool SongTime::ShouldResumeVideoAfterGracePeriod() {
+    if (gracePeriodJustEnded && !videoResumedAfterGracePeriod) {
+        return true;
+    }
+    return false;
+}
+
+void SongTime::SetVideoResumedAfterGracePeriod(bool resumed) {
+    videoResumedAfterGracePeriod = resumed;
+    gracePeriodJustEnded = false;
 }
