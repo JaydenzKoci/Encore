@@ -115,7 +115,6 @@ void GameplayMenu::KeyboardInputCallback(int key, int scancode, int action, int 
     Encore::EncoreLog(LOG_DEBUG, TextFormat("Keyboard key %01i inputted on menu %s, action ", key, ToString(TheMenuManager.currentScreen), action) );
     Player &player = ThePlayerManager.GetActivePlayer(0);
     PlayerGameplayStats *&stats = player.stats;
-    SettingsOld &settingsMain = SettingsOld::getInstance();
     GameplayInputHandler inputHandler;
     if (!TheGameRenderer.streamsLoaded) {
         return;
@@ -124,7 +123,7 @@ void GameplayMenu::KeyboardInputCallback(int key, int scancode, int action, int 
     if (action < 2) {
         // if the key action is NOT repeat (release is 0, press is 1)
         int lane = -2;
-        if (key == settingsMain.keybindPause && action == GLFW_PRESS) {
+        if (key == TheGameSettings.KeybindPause && action == GLFW_PRESS) {
             ManagePausedGame(inputHandler, player);
         } else {
             float rendererAlpha = TheGameRenderer.GetRendererAlpha(player.ActiveSlot);
@@ -132,14 +131,14 @@ void GameplayMenu::KeyboardInputCallback(int key, int scancode, int action, int 
                 return;
             }
         }
-            if ((key == settingsMain.keybindOverdrive
-                        || key == settingsMain.keybindOverdriveAlt)) {
+            if ((key == TheGameSettings.KeybindOverdrive
+                        || key == TheGameSettings.KeybindOverdriveAlt)) {
                 inputHandler.handleInputs(player, -1, action);
             } else if (!player.Bot) {
             if (player.Instrument != PlasticDrums) {
                 if (player.Difficulty == 3 || player.ClassicMode) {
                     for (int i = 0; i < 5; i++) {
-                        if (key == settingsMain.keybinds5K[i]
+                        if (key == TheGameSettings.Keybinds5K[i]
                             && !stats->HeldFretsAlt[i]) {
                             if (action == GLFW_PRESS) {
                                 stats->HeldFrets[i] = true;
@@ -148,7 +147,7 @@ void GameplayMenu::KeyboardInputCallback(int key, int scancode, int action, int 
                                 stats->OverhitFrets[i] = false;
                             }
                             lane = i;
-                        } else if (key == settingsMain.keybinds5KAlt[i]
+                        } else if (key == TheGameSettings.Keybinds5KAlt[i]
                                    && !stats->HeldFrets[i]) {
                             if (action == GLFW_PRESS) {
                                 stats->HeldFretsAlt[i] = true;
@@ -161,7 +160,7 @@ void GameplayMenu::KeyboardInputCallback(int key, int scancode, int action, int 
                     }
                 } else {
                     for (int i = 0; i < 4; i++) {
-                        if (key == settingsMain.keybinds4K[i]
+                        if (key == TheGameSettings.Keybinds4K[i]
                             && !stats->HeldFretsAlt[i]) {
                             if (action == GLFW_PRESS) {
                                 stats->HeldFrets[i] = true;
@@ -170,7 +169,7 @@ void GameplayMenu::KeyboardInputCallback(int key, int scancode, int action, int 
                                 stats->OverhitFrets[i] = false;
                             }
                             lane = i;
-                        } else if (key == settingsMain.keybinds4KAlt[i]
+                        } else if (key == TheGameSettings.Keybinds4KAlt[i]
                                    && !stats->HeldFrets[i]) {
                             if (action == GLFW_PRESS) {
                                 stats->HeldFretsAlt[i] = true;
@@ -183,7 +182,7 @@ void GameplayMenu::KeyboardInputCallback(int key, int scancode, int action, int 
                     }
                 }
                 if (player.ClassicMode) {
-                    if (key == settingsMain.keybindStrumUp) {
+                    if (key == TheGameSettings.KeybindStrumUp) {
                         if (action == GLFW_PRESS) {
                             lane = 8008135;
                             stats->UpStrum = true;
@@ -192,7 +191,7 @@ void GameplayMenu::KeyboardInputCallback(int key, int scancode, int action, int 
                             stats->Overstrum = false;
                         }
                     }
-                    if (key == settingsMain.keybindStrumDown) {
+                    if (key == TheGameSettings.KeybindStrumDown) {
                         if (action == GLFW_PRESS) {
                             lane = 8008135;
                             stats->DownStrum = true;
@@ -212,7 +211,6 @@ void GameplayMenu::KeyboardInputCallback(int key, int scancode, int action, int 
     }
 }
 void GameplayMenu::ControllerInputCallback(int joypadID, GLFWgamepadstate state) {
-    SettingsOld &settingsMain = SettingsOld::getInstance();
     GameplayInputHandler inputHandler;
 
     if (TheMenuManager.currentScreen == SONG_SELECT) {
@@ -238,43 +236,43 @@ void GameplayMenu::ControllerInputCallback(int joypadID, GLFWgamepadstate state)
         }
 
         double eventTime = TheSongTime.GetSongTime();
-        if (settingsMain.controllerPause >= 0) {
-            if (state.buttons[settingsMain.controllerPause]
-                != stats->buttonValues[settingsMain.controllerPause]) {
-                stats->buttonValues[settingsMain.controllerPause] =
-                    state.buttons[settingsMain.controllerPause];
-                if (state.buttons[settingsMain.controllerPause] == 1) {
+        if (TheGameSettings.ControllerPause >= 0) {
+            if (state.buttons[TheGameSettings.ControllerPause]
+                != stats->buttonValues[TheGameSettings.ControllerPause]) {
+                stats->buttonValues[TheGameSettings.ControllerPause] =
+                    state.buttons[TheGameSettings.ControllerPause];
+                if (state.buttons[TheGameSettings.ControllerPause] == 1) {
                     ManagePausedGame(inputHandler, player); // && !player.Bot
                 }
             }
         } else if (!player.Bot) {
-            if (state.axes[-(settingsMain.controllerPause + 1)]
-                != stats->axesValues[-(settingsMain.controllerPause + 1)]) {
-                stats->axesValues[-(settingsMain.controllerPause + 1)] =
-                    state.axes[-(settingsMain.controllerPause + 1)];
-                if (state.axes[-(settingsMain.controllerPause + 1)]
-                    == 1.0f * (float)settingsMain.controllerPauseAxisDirection) {
+            if (state.axes[-(TheGameSettings.ControllerPause + 1)]
+                != stats->axesValues[-(TheGameSettings.ControllerPause + 1)]) {
+                stats->axesValues[-(TheGameSettings.ControllerPause + 1)] =
+                    state.axes[-(TheGameSettings.ControllerPause + 1)];
+                if (state.axes[-(TheGameSettings.ControllerPause + 1)]
+                    == 1.0f * (float)TheGameSettings.ControllerPauseAxisDirection) {
                 }
             }
         } //  && !player.Bot
         float rendererAlpha = TheGameRenderer.GetRendererAlpha(player.ActiveSlot);
         if (rendererAlpha >= 0.95f) {
-            if (settingsMain.controllerOverdrive >= 0) {
-                if (state.buttons[settingsMain.controllerOverdrive]
-                    != stats->buttonValues[settingsMain.controllerOverdrive]) {
-                    stats->buttonValues[settingsMain.controllerOverdrive] =
-                        state.buttons[settingsMain.controllerOverdrive];
+            if (TheGameSettings.ControllerOverdrive >= 0) {
+                if (state.buttons[TheGameSettings.ControllerOverdrive]
+                    != stats->buttonValues[TheGameSettings.ControllerOverdrive]) {
+                    stats->buttonValues[TheGameSettings.ControllerOverdrive] =
+                        state.buttons[TheGameSettings.ControllerOverdrive];
                     inputHandler.handleInputs(
-                        player, -1, state.buttons[settingsMain.controllerOverdrive]
+                        player, -1, state.buttons[TheGameSettings.ControllerOverdrive]
                     );
                 } // // if (!player.Bot)
             } else {
-                if (state.axes[-(settingsMain.controllerOverdrive + 1)]
-                    != stats->axesValues[-(settingsMain.controllerOverdrive + 1)]) {
-                    stats->axesValues[-(settingsMain.controllerOverdrive + 1)] =
-                        state.axes[-(settingsMain.controllerOverdrive + 1)];
-                    if (state.axes[-(settingsMain.controllerOverdrive + 1)]
-                        == 1.0f * (float)settingsMain.controllerOverdriveAxisDirection) {
+                if (state.axes[-(TheGameSettings.ControllerOverdrive + 1)]
+                    != stats->axesValues[-(TheGameSettings.ControllerOverdrive + 1)]) {
+                    stats->axesValues[-(TheGameSettings.ControllerOverdrive + 1)] =
+                        state.axes[-(TheGameSettings.ControllerOverdrive + 1)];
+                    if (state.axes[-(TheGameSettings.ControllerOverdrive + 1)]
+                        == 1.0f * (float)TheGameSettings.ControllerOverdriveAxisDirection) {
                         inputHandler.handleInputs(player, -1, GLFW_PRESS);
                     } else {
                         inputHandler.handleInputs(player, -1, GLFW_RELEASE);
@@ -286,10 +284,10 @@ void GameplayMenu::ControllerInputCallback(int joypadID, GLFWgamepadstate state)
             int lane = -2;
             int action = -2;
             for (int i = 0; i < 5; i++) {
-                if (settingsMain.controller5K[i] >= 0) {
-                    if (state.buttons[settingsMain.controller5K[i]]
-                        != stats->buttonValues[settingsMain.controller5K[i]]) {
-                        if (state.buttons[settingsMain.controller5K[i]] == 1
+                if (TheGameSettings.Controller5K[i] >= 0) {
+                    if (state.buttons[TheGameSettings.Controller5K[i]]
+                        != stats->buttonValues[TheGameSettings.Controller5K[i]]) {
+                        if (state.buttons[TheGameSettings.Controller5K[i]] == 1
                             && !stats->HeldFrets[i])
                             stats->HeldFrets[i] = true;
                         else if (stats->HeldFrets[i]) {
@@ -297,17 +295,17 @@ void GameplayMenu::ControllerInputCallback(int joypadID, GLFWgamepadstate state)
                             stats->OverhitFrets[i] = false;
                         }
                         inputHandler.handleInputs(
-                            player, i, state.buttons[settingsMain.controller5K[i]]
+                            player, i, state.buttons[TheGameSettings.Controller5K[i]]
                         );
-                        stats->buttonValues[settingsMain.controller5K[i]] =
-                            state.buttons[settingsMain.controller5K[i]];
+                        stats->buttonValues[TheGameSettings.Controller5K[i]] =
+                            state.buttons[TheGameSettings.Controller5K[i]];
                         lane = i;
                     }
                 } else {
-                    if (state.axes[-(settingsMain.controller5K[i] + 1)]
-                        != stats->axesValues[-(settingsMain.controller5K[i] + 1)]) {
-                        if (state.axes[-(settingsMain.controller5K[i] + 1)]
-                                == 1.0f * (float)settingsMain.controller5KAxisDirection[i]
+                    if (state.axes[-(TheGameSettings.Controller5K[i] + 1)]
+                        != stats->axesValues[-(TheGameSettings.Controller5K[i] + 1)]) {
+                        if (state.axes[-(TheGameSettings.Controller5K[i] + 1)]
+                                == 1.0f * (float)TheGameSettings.Controller5KAxisDirection[i]
                             && !stats->HeldFrets[i]) {
                             stats->HeldFrets[i] = true;
                             inputHandler.handleInputs(player, i, GLFW_PRESS);
@@ -316,8 +314,8 @@ void GameplayMenu::ControllerInputCallback(int joypadID, GLFWgamepadstate state)
                             stats->OverhitFrets[i] = false;
                             inputHandler.handleInputs(player, i, GLFW_RELEASE);
                         }
-                        stats->axesValues[-(settingsMain.controller5K[i] + 1)] =
-                            state.axes[-(settingsMain.controller5K[i] + 1)];
+                        stats->axesValues[-(TheGameSettings.Controller5K[i] + 1)] =
+                            state.axes[-(TheGameSettings.Controller5K[i] + 1)];
                         lane = i;
                     }
                 }
@@ -345,26 +343,26 @@ void GameplayMenu::ControllerInputCallback(int joypadID, GLFWgamepadstate state)
             }
         } else if (!player.Bot && rendererAlpha >= 0.95f) {
             for (int i = 0; i < 4; i++) {
-                if (settingsMain.controller4K[i] >= 0) {
-                    if (state.buttons[settingsMain.controller4K[i]]
-                        != stats->buttonValues[settingsMain.controller4K[i]]) {
-                        if (state.buttons[settingsMain.controller4K[i]] == 1)
+                if (TheGameSettings.Controller4K[i] >= 0) {
+                    if (state.buttons[TheGameSettings.Controller4K[i]]
+                        != stats->buttonValues[TheGameSettings.Controller4K[i]]) {
+                        if (state.buttons[TheGameSettings.Controller4K[i]] == 1)
                             stats->HeldFrets[i] = true;
                         else {
                             stats->HeldFrets[i] = false;
                             stats->OverhitFrets[i] = false;
                         }
                         inputHandler.handleInputs(
-                            player, i, state.buttons[settingsMain.controller4K[i]]
+                            player, i, state.buttons[TheGameSettings.Controller4K[i]]
                         );
-                        stats->buttonValues[settingsMain.controller4K[i]] =
-                            state.buttons[settingsMain.controller4K[i]];
+                        stats->buttonValues[TheGameSettings.Controller4K[i]] =
+                            state.buttons[TheGameSettings.Controller4K[i]];
                     }
                 } else {
-                    if (state.axes[-(settingsMain.controller4K[i] + 1)]
-                        != stats->axesValues[-(settingsMain.controller4K[i] + 1)]) {
-                        if (state.axes[-(settingsMain.controller4K[i] + 1)]
-                            == 1.0f * (float)settingsMain.controller4KAxisDirection[i]) {
+                    if (state.axes[-(TheGameSettings.Controller4K[i] + 1)]
+                        != stats->axesValues[-(TheGameSettings.Controller4K[i] + 1)]) {
+                        if (state.axes[-(TheGameSettings.Controller4K[i] + 1)]
+                            == 1.0f * (float)TheGameSettings.Controller4KAxisDirection[i]) {
                             stats->HeldFrets[i] = true;
                             inputHandler.handleInputs(player, i, GLFW_PRESS);
                         } else {
@@ -372,8 +370,8 @@ void GameplayMenu::ControllerInputCallback(int joypadID, GLFWgamepadstate state)
                             stats->OverhitFrets[i] = false;
                             inputHandler.handleInputs(player, i, GLFW_RELEASE);
                         }
-                        stats->axesValues[-(settingsMain.controller4K[i] + 1)] =
-                            state.axes[-(settingsMain.controller4K[i] + 1)];
+                        stats->axesValues[-(TheGameSettings.Controller4K[i] + 1)] =
+                            state.axes[-(TheGameSettings.Controller4K[i] + 1)];
                     }
                 }
             }
@@ -661,23 +659,77 @@ void GameplayMenu::Draw() {
         TheAudioManager.loadStreams(TheSongList.curSong->stemsPath);
         TheGameRenderer.streamsLoaded = true;
     } else {
-        for (int i = 0; i < ThePlayerManager.PlayersActive; i++) {
-            for (auto &stream : TheAudioManager.loadedStreams) {
-                Player &player = ThePlayerManager.GetActivePlayer(i);
-                if ((player.ClassicMode ? player.Instrument - 5 : player.Instrument)
-                    == stream.instrument) {
+        for (auto &stream : TheAudioManager.loadedStreams) {
+            bool streamHandled = false;
+            
+            if (stream.instrument == 5) { // backing track in enum mapping
+                TheAudioManager.SetAudioStreamVolume(
+                    stream.handle,
+                    TheGameSettings.avMainVolume * TheGameSettings.avActiveInstrumentVolume
+                );
+                streamHandled = true;
+            }
+            else if (stream.instrument == 4) {
+                // Need to determine if this is vocals or backing
+                // Check if any player is playing vocals
+                bool hasVocalPlayer = false;
+                for (int i = 0; i < ThePlayerManager.PlayersActive; i++) {
+                    Player &player = ThePlayerManager.GetActivePlayer(i);
+                    int playerInstrument = player.ClassicMode ? player.Instrument - 5 : player.Instrument;
+                    if (playerInstrument == 4) { // PartVocals
+                        hasVocalPlayer = true;
+                        break;
+                    }
+                }
+                
+                if (!hasVocalPlayer) {
+                    // No vocal player, so instrument 4 is likely backing track
                     TheAudioManager.SetAudioStreamVolume(
                         stream.handle,
-                        player.stats->Mute
-                            ? TheGameSettings.avMainVolume * TheGameSettings.avMuteVolume
-                            : TheGameSettings.avMainVolume
-                                * TheGameSettings.avActiveInstrumentVolume
+                        TheGameSettings.avMainVolume * TheGameSettings.avActiveInstrumentVolume
                     );
-                } else {
+                    streamHandled = true;
+                }
+            }
+            
+            // If not backing track, handle as normal instrument
+            if (!streamHandled) {
+                for (int i = 0; i < ThePlayerManager.PlayersActive; i++) {
+                    Player &player = ThePlayerManager.GetActivePlayer(i);
+                    int playerInstrument = player.ClassicMode ? player.Instrument - 5 : player.Instrument;
+                    
+                    bool isPlayerStream = false;
+                    
+                    // Normal instrument matching
+                    if (playerInstrument == stream.instrument) {
+                        isPlayerStream = true;
+                    }
+                    
+                    // Special handling for vocals - they might be mapped as instrument 3 or 4
+                    if (playerInstrument == 4) { // Player is playing vocals (PartVocals)
+                        if (stream.instrument == 3 || stream.instrument == 4) {
+                            isPlayerStream = true;
+                        }
+                    }
+                    
+                    if (isPlayerStream) {
+                        TheAudioManager.SetAudioStreamVolume(
+                            stream.handle,
+                            player.stats->Mute
+                                ? TheGameSettings.avMainVolume * TheGameSettings.avMuteVolume
+                                : TheGameSettings.avMainVolume
+                                    * TheGameSettings.avActiveInstrumentVolume
+                        );
+                        streamHandled = true;
+                        break;
+                    }
+                }
+                
+                // If no player matched this stream, set to inactive volume
+                if (!streamHandled) {
                     TheAudioManager.SetAudioStreamVolume(
                         stream.handle,
-                        TheGameSettings.avMainVolume
-                            * TheGameSettings.avInactiveInstrumentVolume
+                        TheGameSettings.avMainVolume * TheGameSettings.avInactiveInstrumentVolume
                     );
                 }
             }

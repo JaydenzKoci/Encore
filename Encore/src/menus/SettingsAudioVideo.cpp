@@ -15,6 +15,8 @@
 #include "OvershellMenu.h"
 #include "util/settings-text.h"
 
+extern Encore::SettingsInit TheSettingsInitializer;
+
 bool ShowAudioVisualSettings = true;
 bool showVolumeSettings = false;
 
@@ -560,7 +562,7 @@ void SettingsAudioVideo::Draw() {
     
     if (GuiButton(videoResolutionCycleButtonRect, currentResolution)) {
         TheGameSettings.VideoBackgroundResolution = (TheGameSettings.VideoBackgroundResolution + 1) % 4;
-        TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+        TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
     }
 
     settingOffset++;
@@ -591,7 +593,7 @@ void SettingsAudioVideo::Draw() {
     if (GuiButton(fadeDecButtonRect, "-5")) {
         TheGameSettings.BackgroundFade -= 5;
         if (TheGameSettings.BackgroundFade < 1) TheGameSettings.BackgroundFade = 1;
-        TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+        TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
     }
     
     float fadeValue = (float)TheGameSettings.BackgroundFade;
@@ -603,7 +605,7 @@ void SettingsAudioVideo::Draw() {
     if (GuiButton(fadeIncButtonRect, "+5")) {
         TheGameSettings.BackgroundFade += 5;
         if (TheGameSettings.BackgroundFade > 100) TheGameSettings.BackgroundFade = 100;
-        TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+        TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
     }
     
     std::string percentText = std::to_string(TheGameSettings.BackgroundFade) + "%";
@@ -664,7 +666,7 @@ void SettingsAudioVideo::Save() {
     TheGameSettings.BackgroundBeatFlash = BackgroundBeatFlash;
     TheGameSettings.VerticalSync = VerticalSync;
 
-    TheGameSettings.SaveToFile("settings.json");
+    TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
 
     TraceLog(LOG_INFO, "Saved audio/video settings: AudioOffset=%d, Framerate=%d, avMainVolume=%.2f",
              AudioOffset, Framerate, avMainVolume);

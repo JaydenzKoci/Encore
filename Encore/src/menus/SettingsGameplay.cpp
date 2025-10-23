@@ -14,7 +14,7 @@
 #include <thread>
 #include <chrono>
 
-
+extern Encore::SettingsInit TheSettingsInitializer;
 
 bool ShowGameplaySettings = true;
 
@@ -280,14 +280,14 @@ void SettingsGameplay::Draw() {
     if (GuiButton(hitWindowOffButtonRect, "Off")) {
         if (!TheGameSettings.HideHitWindow) {
             TheGameSettings.HideHitWindow = true;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, !TheGameSettings.HideHitWindow ? ColorToInt(activeColor) : defaultColor);
     if (GuiButton(hitWindowOnButtonRect, "On")) {
         if (TheGameSettings.HideHitWindow) {
             TheGameSettings.HideHitWindow = false;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     if (TheGameSettings.HideHitWindow) {
@@ -315,14 +315,14 @@ void SettingsGameplay::Draw() {
     if (GuiButton(healthBarOffButtonRect, "Off")) {
         if (TheGameSettings.ShowHealthBar) {
             TheGameSettings.ShowHealthBar = false;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, TheGameSettings.ShowHealthBar ? ColorToInt(activeColor) : defaultColor);
     if (GuiButton(healthBarOnButtonRect, "On")) {
         if (!TheGameSettings.ShowHealthBar) {
             TheGameSettings.ShowHealthBar = true;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     if (!TheGameSettings.ShowHealthBar) {
@@ -350,14 +350,14 @@ void SettingsGameplay::Draw() {
     if (GuiButton(fpsOffButtonRect, "Off")) {
         if (!TheGameSettings.HideFPSCounter) {
             TheGameSettings.HideFPSCounter = true;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, !TheGameSettings.HideFPSCounter ? ColorToInt(activeColor) : defaultColor);
     if (GuiButton(fpsOnButtonRect, "On")) {
         if (TheGameSettings.HideFPSCounter) {
             TheGameSettings.HideFPSCounter = false;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     if (TheGameSettings.HideFPSCounter) {
@@ -385,14 +385,14 @@ void SettingsGameplay::Draw() {
     if (GuiButton(versionOffButtonRect, "Off")) {
         if (!TheGameSettings.HideVersionInfo) {
             TheGameSettings.HideVersionInfo = true;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, !TheGameSettings.HideVersionInfo ? ColorToInt(activeColor) : defaultColor);
     if (GuiButton(versionOnButtonRect, "On")) {
         if (TheGameSettings.HideVersionInfo) {
             TheGameSettings.HideVersionInfo = false;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     if (TheGameSettings.HideVersionInfo) {
@@ -425,7 +425,7 @@ void SettingsGameplay::Draw() {
     
     if (GuiButton(hudCycleButtonRect, currentHUDPosition)) {
         TheGameSettings.HUDPosition = (TheGameSettings.HUDPosition + 1) % 4;
-        TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+        TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
     }
 
     settingOffset++;
@@ -446,14 +446,14 @@ void SettingsGameplay::Draw() {
     if (GuiButton(trackFadingOffButtonRect, "Off")) {
         if (TheGameSettings.TrackFading) {
             TheGameSettings.TrackFading = false;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, TheGameSettings.TrackFading ? ColorToInt(activeColor) : defaultColor);
     if (GuiButton(trackFadingOnButtonRect, "On")) {
         if (!TheGameSettings.TrackFading) {
             TheGameSettings.TrackFading = true;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     if (!TheGameSettings.TrackFading) {
@@ -513,14 +513,14 @@ void SettingsGameplay::Draw() {
     if (GuiButton(videoBackgroundsOffButtonRect, "Off")) {
         if (TheGameSettings.VideoBackgrounds) {
             TheGameSettings.VideoBackgrounds = false;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, TheGameSettings.VideoBackgrounds ? ColorToInt(activeColor) : defaultColor);
     if (GuiButton(videoBackgroundsOnButtonRect, "On")) {
         if (!TheGameSettings.VideoBackgrounds) {
             TheGameSettings.VideoBackgrounds = true;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     if (!TheGameSettings.VideoBackgrounds) {
@@ -548,14 +548,14 @@ void SettingsGameplay::Draw() {
     if (GuiButton(classicNotesOffButtonRect, "Off")) {
         if (TheGameSettings.ClassicNotesOnPad) {
             TheGameSettings.ClassicNotesOnPad = false;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, TheGameSettings.ClassicNotesOnPad ? ColorToInt(activeColor) : defaultColor);
     if (GuiButton(classicNotesOnButtonRect, "On")) {
         if (!TheGameSettings.ClassicNotesOnPad) {
             TheGameSettings.ClassicNotesOnPad = true;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     if (!TheGameSettings.ClassicNotesOnPad) {
@@ -583,14 +583,14 @@ void SettingsGameplay::Draw() {
     if (GuiButton(debugTimersOffButtonRect, "Off")) {
         if (TheGameSettings.ShowDebugTimers) {
             TheGameSettings.ShowDebugTimers = false;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, TheGameSettings.ShowDebugTimers ? ColorToInt(activeColor) : defaultColor);
     if (GuiButton(debugTimersOnButtonRect, "On")) {
         if (!TheGameSettings.ShowDebugTimers) {
             TheGameSettings.ShowDebugTimers = true;
-            TheGameSettings.SaveToFile((settingsMain.getDirectory() / "settings.json").string());
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
         }
     }
     if (!TheGameSettings.ShowDebugTimers) {
