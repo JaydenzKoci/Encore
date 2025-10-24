@@ -650,7 +650,9 @@ void GameplayMenu::Draw() {
         BackgroundColor = BeatToCharViaTickThing(TheGameRenderer.CurrentTick, 0, 8, 960);
     }
 
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color { 0, 0, 0, 128 });
+    if (TheGameSettings.BackgroundTint) {
+        DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color { 0, 0, 0, 128 });
+    }
     DrawRectangle(
         0, 0, GetScreenWidth(), GetScreenHeight(), Color { 255, 255, 255, BackgroundColor }
     );
@@ -662,37 +664,33 @@ void GameplayMenu::Draw() {
         for (auto &stream : TheAudioManager.loadedStreams) {
             bool streamHandled = false;
             
-            if (stream.instrument == 5) { // backing track in enum mapping
+            if (stream.instrument == 5) {
                 TheAudioManager.SetAudioStreamVolume(
                     stream.handle,
-                    TheGameSettings.avMainVolume * TheGameSettings.avActiveInstrumentVolume
+                    TheGameSettings.avMainVolume * TheGameSettings.avBackingTrackVolume
                 );
                 streamHandled = true;
             }
             else if (stream.instrument == 4) {
-                // Need to determine if this is vocals or backing
-                // Check if any player is playing vocals
                 bool hasVocalPlayer = false;
                 for (int i = 0; i < ThePlayerManager.PlayersActive; i++) {
                     Player &player = ThePlayerManager.GetActivePlayer(i);
                     int playerInstrument = player.ClassicMode ? player.Instrument - 5 : player.Instrument;
-                    if (playerInstrument == 4) { // PartVocals
+                    if (playerInstrument == 4) {
                         hasVocalPlayer = true;
                         break;
                     }
                 }
                 
                 if (!hasVocalPlayer) {
-                    // No vocal player, so instrument 4 is likely backing track
                     TheAudioManager.SetAudioStreamVolume(
                         stream.handle,
-                        TheGameSettings.avMainVolume * TheGameSettings.avActiveInstrumentVolume
+                        TheGameSettings.avMainVolume * TheGameSettings.avBackingTrackVolume
                     );
                     streamHandled = true;
                 }
             }
             
-            // If not backing track, handle as normal instrument
             if (!streamHandled) {
                 for (int i = 0; i < ThePlayerManager.PlayersActive; i++) {
                     Player &player = ThePlayerManager.GetActivePlayer(i);
@@ -700,13 +698,11 @@ void GameplayMenu::Draw() {
                     
                     bool isPlayerStream = false;
                     
-                    // Normal instrument matching
                     if (playerInstrument == stream.instrument) {
                         isPlayerStream = true;
                     }
                     
-                    // Special handling for vocals - they might be mapped as instrument 3 or 4
-                    if (playerInstrument == 4) { // Player is playing vocals (PartVocals)
+                    if (playerInstrument == 4) {
                         if (stream.instrument == 3 || stream.instrument == 4) {
                             isPlayerStream = true;
                         }
@@ -725,7 +721,6 @@ void GameplayMenu::Draw() {
                     }
                 }
                 
-                // If no player matched this stream, set to inactive volume
                 if (!streamHandled) {
                     TheAudioManager.SetAudioStreamVolume(
                         stream.handle,

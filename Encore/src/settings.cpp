@@ -67,17 +67,7 @@ namespace Encore {
         bool settingsFileExists = exists(directory / "settings.json");
         bool oldSettingsFileExists = exists(directory / "settings-old.json");
 
-        if (oldSettingsFileExists && !settingsFileExists) {
-            TraceLog(LOG_INFO, "Found settings-old.json, converting to settings.json format");
-            this->LegacyMigrateSettings();
-            
-            try {
-                std::filesystem::remove(directory / "settings-old.json");
-                TraceLog(LOG_INFO, "Removed settings-old.json after successful conversion");
-            } catch (const std::exception& e) {
-                TraceLog(LOG_WARNING, "Failed to remove settings-old.json: %s", e.what());
-            }
-        } else if (settingsFileExists) {
+        if (settingsFileExists) {
             this->ReadSettings();
             this->MergeWithDefaults();
         } else {
@@ -86,6 +76,18 @@ namespace Encore {
                 TheGameSettings.SongPaths = {directory / "Songs"};
             }
             this->CreateSettings();
+        }
+
+        if (oldSettingsFileExists) {
+            TraceLog(LOG_INFO, "Found settings-old.json, migrating settings and removing old file");
+            this->LegacyMigrateSettings();
+            
+            try {
+                std::filesystem::remove(directory / "settings-old.json");
+                TraceLog(LOG_INFO, "Removed settings-old.json after successful migration");
+            } catch (const std::exception& e) {
+                TraceLog(LOG_WARNING, "Failed to remove settings-old.json: %s", e.what());
+            }
         }
     }
 

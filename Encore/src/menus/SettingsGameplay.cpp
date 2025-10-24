@@ -237,7 +237,7 @@ void SettingsGameplay::Draw() {
     DrawTextEx(assets.rubikBold, "Scan Songs", {boxLeft + u.winpct(0.01f), scanSongsTop + (scanButtonHeight - scanSongsTextSize.y) / 2}, EntryFontSize, 0, WHITE);
     Rectangle scanButtonRect = {OptionLeft + OptionWidth - scanButtonWidth, scanSongsTop, scanButtonWidth, scanButtonHeight};
     if (CheckCollisionPointRec(mousePos, scanButtonRect)) {
-        selectedIndex = 8;
+        selectedIndex = 7;
         isHovering = true;
         DrawRectangleLinesEx(scanSongsBoxRect, highlightBorderWidth, glowColor);
     }
@@ -540,7 +540,7 @@ void SettingsGameplay::Draw() {
     Rectangle classicNotesOffButtonRect = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, classicNotesTop, toggleButtonWidth, EntryHeight};
     Rectangle classicNotesOnButtonRect = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, classicNotesTop, toggleButtonWidth, EntryHeight};
     if (CheckCollisionPointRec(mousePos, classicNotesOffButtonRect) || CheckCollisionPointRec(mousePos, classicNotesOnButtonRect)) {
-        selectedIndex = 7;
+        selectedIndex = 8;
         isHovering = true;
         DrawRectangleLinesEx(classicNotesBoxRect, highlightBorderWidth, glowColor);
     }

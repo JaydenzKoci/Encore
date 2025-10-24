@@ -19,12 +19,14 @@
     OPTION(float, avSoundEffectVolume, 0.5f)                                             \
     OPTION(float, avMuteVolume, 0.15f)                                                   \
     OPTION(float, avMenuMusicVolume, 0.15f)                                              \
+    OPTION(float, avBackingTrackVolume, 0.5f)                                           \
     OPTION(bool, Fullscreen, false)                                                      \
     OPTION(int, AudioOffset, 0)                                                          \
     OPTION(bool, DiscordRichPresence, true)                                              \
     OPTION(int, Framerate, 60)                                                           \
     OPTION(bool, VerticalSync, true)                                                     \
     OPTION(bool, BackgroundBeatFlash, true)                                              \
+    OPTION(bool, BackgroundTint, true)                                                   \
     OPTION(bool, HideHitWindow, false)                                                     \
     OPTION(bool, ShowHealthBar, true)                                                    \
     OPTION(bool, HideFPSCounter, false)                                                  \
@@ -89,6 +91,7 @@ namespace Encore {
         avSoundEffectVolume,
         avMuteVolume,
         avMenuMusicVolume,
+        avBackingTrackVolume,
         Fullscreen,
         Framerate,
         VerticalSync,
@@ -96,6 +99,7 @@ namespace Encore {
         DiscordRichPresence,
         SongPaths,
         BackgroundBeatFlash,
+        BackgroundTint,
         HideHitWindow,
         ShowHealthBar,
         HideFPSCounter,

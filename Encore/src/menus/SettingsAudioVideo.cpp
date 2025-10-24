@@ -29,7 +29,9 @@ float avInactiveInstrumentVolume = 0.0f;
 float avMuteVolume = 0.0f;
 float avMenuMusicVolume = 0.0f;
 float avSoundEffectVolume = 0.0f;
+float avBackingTrackVolume = 0.0f;
 bool BackgroundBeatFlash = false;
+bool BackgroundTint = true;
 bool VerticalSync = false;
 
 void SettingsAudioVideo::Draw() {
@@ -107,9 +109,19 @@ void SettingsAudioVideo::Draw() {
             "Sound Effects Volume",
             "TBD"
         },
+        // Backing Track
+        {
+            "Backing Track Volume",
+            "TBD"
+        },
         // Background Beat Flash
         {
             "Background Beat Flash",
+            "TBD"
+        },
+        // Background Tint
+        {
+            "Background Tint",
             "TBD"
         },
         // Framerate
@@ -432,6 +444,31 @@ void SettingsAudioVideo::Draw() {
         percentX = sfxVolSliderRect.x + adjustedVolumeSliderWidth + u.winpct(0.01f) + 90.0f;
         percentY = sfxVolTop + (EntryHeight - textSize.y) / 2;
         DrawTextEx(assets.rubikBold, percentText.c_str(), {percentX, percentY}, EntryFontSize, 0, WHITE);
+
+        // Backing Track
+        settingOffset++;
+        float backingVolTop = EntryTop + (EntryHeight + verticalGap) * settingOffset + verticalSubmenuGap - 7.0f;
+        Rectangle backingVolBoxRect = {volumeBoxLeft - borderWidth, backingVolTop - borderWidth, volumeBoxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
+        DrawRectangle(volumeBoxLeft - borderWidth, backingVolTop - borderWidth, volumeBoxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
+        DrawRectangle(volumeBoxLeft, backingVolTop, volumeBoxWidth, EntryHeight, boxBackground);
+        Vector2 backingVolTextSize = MeasureTextEx(assets.rubikBold, "Backing Track", EntryFontSize, 0);
+        DrawTextEx(assets.rubikBold, "Backing Track", {volumeBoxLeft + u.winpct(0.01f), backingVolTop + (EntryHeight - backingVolTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+        Rectangle backingVolSliderRect = {volumeOptionLeft + maxTextWidth + volumeShift, backingVolTop, adjustedVolumeSliderWidth, buttonHeight};
+        if (CheckCollisionPointRec(mousePos, backingVolSliderRect)) {
+            selectedIndex = 8;
+            isHovering = true;
+            DrawRectangleLinesEx(backingVolBoxRect, highlightBorderWidth, glowColor);
+        }
+        float prevBackingVolume = avBackingTrackVolume;
+        ::GuiSlider(backingVolSliderRect, nullptr, nullptr, &avBackingTrackVolume, 0.0f, 1.0f);
+        if (avBackingTrackVolume != prevBackingVolume) {
+            avBackingTrackVolume = roundf(avBackingTrackVolume * 20.0f) / 20.0f;
+        }
+        percentText = std::to_string(static_cast<int>(avBackingTrackVolume * 100.0f)) + "%";
+        textSize = MeasureTextEx(assets.rubikBold, percentText.c_str(), EntryFontSize, 0);
+        percentX = backingVolSliderRect.x + adjustedVolumeSliderWidth + u.winpct(0.01f) + 90.0f;
+        percentY = backingVolTop + (EntryHeight - textSize.y) / 2;
+        DrawTextEx(assets.rubikBold, percentText.c_str(), {percentX, percentY}, EntryFontSize, 0, WHITE);
     }
 
     // Background Beat Flash
@@ -448,7 +485,7 @@ void SettingsAudioVideo::Draw() {
     Rectangle offButtonRect1 = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, beatFlashTop, toggleButtonWidth, buttonHeight};
     Rectangle onButtonRect1 = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, beatFlashTop, toggleButtonWidth, buttonHeight};
     if (CheckCollisionPointRec(mousePos, offButtonRect1) || CheckCollisionPointRec(mousePos, onButtonRect1)) {
-        selectedIndex = 8;
+        selectedIndex = 9;
         isHovering = true;
         DrawRectangleLinesEx(beatFlashBoxRect, highlightBorderWidth, glowColor);
     }
@@ -467,6 +504,39 @@ void SettingsAudioVideo::Draw() {
     }
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
 
+    // Background Tint
+    settingOffset++;
+    float bgTintTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    if (showVolumeSettings) {
+        bgTintTop += verticalSubmenuGap - 7.0f;
+    }
+    Rectangle bgTintBoxRect = {boxLeft - borderWidth, bgTintTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, bgTintTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, bgTintTop, boxWidth, EntryHeight, boxBackground);
+    Vector2 bgTintTextSize = MeasureTextEx(assets.rubikBold, "Background Tint", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Background Tint", {boxLeft + u.winpct(0.01f), bgTintTop + (EntryHeight - bgTintTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    Rectangle offButtonRect3 = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, bgTintTop, toggleButtonWidth, buttonHeight};
+    Rectangle onButtonRect3 = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, bgTintTop, toggleButtonWidth, buttonHeight};
+    if (CheckCollisionPointRec(mousePos, offButtonRect3) || CheckCollisionPointRec(mousePos, onButtonRect3)) {
+        selectedIndex = 10;
+        isHovering = true;
+        DrawRectangleLinesEx(bgTintBoxRect, highlightBorderWidth, glowColor);
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, BackgroundTint ? defaultColor : ColorToInt(activeColor));
+    if (GuiButton(offButtonRect3, "Off")) {
+        BackgroundTint = false;
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, BackgroundTint ? ColorToInt(activeColor) : defaultColor);
+    if (GuiButton(onButtonRect3, "On")) {
+        BackgroundTint = true;
+    }
+    if (!BackgroundTint) {
+        DrawRectangleLinesEx(offButtonRect3, highlightBorderWidth, glowColor);
+    } else {
+        DrawRectangleLinesEx(onButtonRect3, highlightBorderWidth, glowColor);
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
+
     // Framerate
     settingOffset++;
     float framerateTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
@@ -482,7 +552,7 @@ void SettingsAudioVideo::Draw() {
     Rectangle frSliderRect = {frDecButtonRect.x + buttonWidth15, framerateTop, adjustedSliderWidth, buttonHeight};
     Rectangle frIncButtonRect = {frSliderRect.x + frSliderRect.width, framerateTop, buttonWidth15Inc, buttonHeight};
     if (CheckCollisionPointRec(mousePos, frDecButtonRect) || CheckCollisionPointRec(mousePos, frSliderRect) || CheckCollisionPointRec(mousePos, frIncButtonRect)) {
-        selectedIndex = 9;
+        selectedIndex = 11;
         isHovering = true;
         DrawRectangleLinesEx(framerateBoxRect, highlightBorderWidth, glowColor);
     }
@@ -518,7 +588,7 @@ void SettingsAudioVideo::Draw() {
     Rectangle offButtonRect2 = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, vsyncTop, toggleButtonWidth, buttonHeight};
     Rectangle onButtonRect2 = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, vsyncTop, toggleButtonWidth, buttonHeight};
     if (CheckCollisionPointRec(mousePos, offButtonRect2) || CheckCollisionPointRec(mousePos, onButtonRect2)) {
-        selectedIndex = 10;
+        selectedIndex = 12;
         isHovering = true;
         DrawRectangleLinesEx(vsyncBoxRect, highlightBorderWidth, glowColor);
     }
@@ -555,7 +625,7 @@ void SettingsAudioVideo::Draw() {
     const char* currentResolution = resolutionNames[TheGameSettings.VideoBackgroundResolution % 4];
     
     if (CheckCollisionPointRec(mousePos, videoResolutionCycleButtonRect)) {
-        selectedIndex = 11;
+        selectedIndex = 13;
         isHovering = true;
         DrawRectangleLinesEx(videoResolutionBoxRect, highlightBorderWidth, glowColor);
     }
@@ -585,7 +655,7 @@ void SettingsAudioVideo::Draw() {
     Rectangle fadeIncButtonRect = {fadeSliderRect.x + fadeSliderRect.width, backgroundFadeTop, buttonWidth15Inc, buttonHeight};
     
     if (CheckCollisionPointRec(mousePos, fadeDecButtonRect) || CheckCollisionPointRec(mousePos, fadeSliderRect) || CheckCollisionPointRec(mousePos, fadeIncButtonRect)) {
-        selectedIndex = 12;
+        selectedIndex = 14;
         isHovering = true;
         DrawRectangleLinesEx(backgroundFadeBoxRect, highlightBorderWidth, glowColor);
     }
@@ -647,7 +717,9 @@ void SettingsAudioVideo::Load() {
     avMuteVolume = TheGameSettings.avMuteVolume;
     avMenuMusicVolume = TheGameSettings.avMenuMusicVolume;
     avSoundEffectVolume = TheGameSettings.avSoundEffectVolume;
+    avBackingTrackVolume = TheGameSettings.avBackingTrackVolume;
     BackgroundBeatFlash = TheGameSettings.BackgroundBeatFlash;
+    BackgroundTint = TheGameSettings.BackgroundTint;
     VerticalSync = TheGameSettings.VerticalSync;
 
     TraceLog(LOG_INFO, "Loaded audio/video settings: AudioOffset=%d, Framerate=%d, avMainVolume=%.2f",
@@ -663,7 +735,9 @@ void SettingsAudioVideo::Save() {
     TheGameSettings.avMuteVolume = avMuteVolume;
     TheGameSettings.avMenuMusicVolume = avMenuMusicVolume;
     TheGameSettings.avSoundEffectVolume = avSoundEffectVolume;
+    TheGameSettings.avBackingTrackVolume = avBackingTrackVolume;
     TheGameSettings.BackgroundBeatFlash = BackgroundBeatFlash;
+    TheGameSettings.BackgroundTint = BackgroundTint;
     TheGameSettings.VerticalSync = VerticalSync;
 
     TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
