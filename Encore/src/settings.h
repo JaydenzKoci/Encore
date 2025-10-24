@@ -17,7 +17,7 @@
     OPTION(float, avActiveInstrumentVolume, 0.75f)                                       \
     OPTION(float, avInactiveInstrumentVolume, 0.5f)                                      \
     OPTION(float, avSoundEffectVolume, 0.5f)                                             \
-    OPTION(float, avMuteVolume, 0.15f)                                                   \
+    OPTION(float, avMuteVolume, 0.10f)                                                   \
     OPTION(float, avMenuMusicVolume, 0.15f)                                              \
     OPTION(float, avBackingTrackVolume, 0.5f)                                           \
     OPTION(bool, Fullscreen, false)                                                      \
