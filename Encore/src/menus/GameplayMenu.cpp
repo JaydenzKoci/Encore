@@ -672,23 +672,11 @@ void GameplayMenu::Draw() {
                 streamHandled = true;
             }
             else if (stream.instrument == 4) {
-                bool hasVocalPlayer = false;
-                for (int i = 0; i < ThePlayerManager.PlayersActive; i++) {
-                    Player &player = ThePlayerManager.GetActivePlayer(i);
-                    int playerInstrument = player.ClassicMode ? player.Instrument - 5 : player.Instrument;
-                    if (playerInstrument == 4) {
-                        hasVocalPlayer = true;
-                        break;
-                    }
-                }
-                
-                if (!hasVocalPlayer) {
-                    TheAudioManager.SetAudioStreamVolume(
-                        stream.handle,
-                        TheGameSettings.avMainVolume * TheGameSettings.avBackingTrackVolume
-                    );
-                    streamHandled = true;
-                }
+                TheAudioManager.SetAudioStreamVolume(
+                    stream.handle,
+                    TheGameSettings.avMainVolume * TheGameSettings.avBackingTrackVolume
+                );
+                streamHandled = true;
             }
             
             if (!streamHandled) {
