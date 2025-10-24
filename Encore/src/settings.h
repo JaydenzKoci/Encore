@@ -13,7 +13,7 @@
 #include <nlohmann/json.hpp>
 
 #define SETTINGS_OPTIONS                                                                 \
-    OPTION(float, avMainVolume, 0.5f)                                                    \
+    OPTION(float, avMainVolume, 0.25f)                                                    \
     OPTION(float, avActiveInstrumentVolume, 0.75f)                                       \
     OPTION(float, avInactiveInstrumentVolume, 0.5f)                                      \
     OPTION(float, avSoundEffectVolume, 0.5f)                                             \
