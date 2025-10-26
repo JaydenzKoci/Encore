@@ -87,22 +87,22 @@ endif()
 target_include_directories(Encore PRIVATE "include" "src" ${FFMPEG_INCLUDE_DIR})
 if(WIN32)
 if (CMAKE_SIZEOF_VOID_P EQUAL 4)
-find_library(DISCORD-RPC NAMES discord-rpc PATHS "lib/discord-rpc/windows/x86/")
 find_library(BASS NAMES bass PATHS "lib/bass/windows/x86/")
 find_library(BASSOPUS NAMES bassopus PATHS "lib/bass/windows/x86/")
+find_library(DISCORD-SDK NAMES discord_game_sdk PATHS "lib/discord-rpc/windows/x86/")
 endif()
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-find_library(DISCORD-RPC NAMES discord-rpc PATHS "lib/discord-rpc/windows/x64/")
 find_library(BASS NAMES bass PATHS "lib/bass/windows/x64/")
 find_library(BASSOPUS NAMES bassopus PATHS "lib/bass/windows/x64/")
+find_library(DISCORD-SDK NAMES discord_game_sdk PATHS "lib/discord-rpc/windows/x64/")
 endif()
 
 endif()
 if(UNIX AND NOT APPLE)
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-find_library(DISCORD-RPC NAMES discord-rpc PATHS "lib/discord-rpc/linux/x64")
 find_library(BASS NAMES bass PATHS "lib/bass/linux/x86_64")
 find_library(BASSOPUS NAMES bassopus PATHS "lib/bass/linux/x86_64")
+find_library(DISCORD-SDK NAMES discord_game_sdk PATHS "lib/discord-rpc/linux/x64")
 
 # Set RPATH to look in the same directory as the executable
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath='$ORIGIN'")
@@ -110,9 +110,9 @@ endif()
 
 endif()
 if(APPLE)
-find_library(DISCORD-RPC NAMES discord-rpc PATHS "lib/discord-rpc/macos")
 find_library(BASS NAMES bass PATHS "lib/bass/macos")
 find_library(BASSOPUS NAMES bassopus PATHS "lib/bass/macos")
+find_library(DISCORD-SDK NAMES discord_game_sdk PATHS "lib/discord-rpc/macos")
 
 endif()
 
@@ -152,7 +152,7 @@ raylib
 nlohmann_json::nlohmann_json
 ${BASS}
 ${BASSOPUS}
-${DISCORD-RPC}
+${DISCORD-SDK}
 ${FFMPEG_LIBRARIES}
 )
 if(UNIX AND NOT APPLE)
