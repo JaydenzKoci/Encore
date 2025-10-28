@@ -3,15 +3,22 @@
 //
 
 #include "discord.h"
+
+#ifdef DISCORD_ENABLED
 #include "discord-rpc/core.h"
+#endif
+
 #include <array>
 #include <ctime>
 #include <iostream>
 #include <chrono>
 
+#ifdef DISCORD_ENABLED
 discord::Core* core{};
+#endif
 
 void Encore::Discord::Initialize() {
+#ifdef DISCORD_ENABLED
     auto result = discord::Core::Create(1216298119457804379, DiscordCreateFlags_Default, &core);
     if (!core) {
         std::cout << "Failed to instantiate discord core! (err " << static_cast<int>(result)
@@ -21,18 +28,11 @@ void Encore::Discord::Initialize() {
     }
     const auto p0 = std::chrono::system_clock::now();
     startTime = std::chrono::duration_cast<std::chrono::seconds>(p0.time_since_epoch()).count();
-    /*
-    try {
-        discord::Core::Create(1216298119457804379, DiscordCreateFlags_Default, &core);
-        //DiscordEventHandlers Handlers {};
-        // Discord_Initialize("1216298119457804379", &Handlers, 1, nullptr);
-    }
-    catch (const std::exception& e) {
-        Initialized = false;
-    //     return;
-    }
-    */
     Initialized = true;
+#else
+    std::cout << "Discord SDK not available on this platform\n";
+    Initialized = false;
+#endif
 }
 
 
@@ -43,14 +43,18 @@ Encore::Discord::~Discord() {
     Initialized = false;
 }
 void Encore::Discord::Update() {
-    core->RunCallbacks();
+#ifdef DISCORD_ENABLED
+    if (core) {
+        core->RunCallbacks();
+    }
+#endif
 }
 
 void Encore::Discord::DiscordUpdatePresence(const std::string &title, const std::string &details, int players) {
-    if (!Initialized)
+#ifdef DISCORD_ENABLED
+    if (!Initialized || !core)
         return;
     discord::Activity activity{};
-    // activity.SetState(title.c_str());
     if (players == 1) {
         activity.SetState("Playing solo");
     }
@@ -66,6 +70,7 @@ void Encore::Discord::DiscordUpdatePresence(const std::string &title, const std:
         std::cout << ((result == discord::Result::Ok) ? "Succeeded" : "Failed")
                   << " updating activity!\n";
     });
+#endif
 }
 
 std::array<std::string, 11> AssetNames = {
@@ -84,7 +89,8 @@ void Encore::Discord::DiscordUpdatePresenceSong(
     const std::string &title, const std::string &details, int instrument, int length,
     const std::string &songTitle, const std::string &songArtist
 ) {
-    if (!Initialized)
+#ifdef DISCORD_ENABLED
+    if (!Initialized || !core)
         return;
     discord::Activity activity{};
     activity.SetDetails((details).c_str());
@@ -102,12 +108,9 @@ void Encore::Discord::DiscordUpdatePresenceSong(
     activity.GetAssets().SetSmallText(PartNames[instrument].c_str());
     activity.SetType(discord::ActivityType::Playing);
     activity.GetTimestamps().SetStart(startTime);
-    //const auto p1 = std::chrono::system_clock::now();
-    //const auto end = p1 + std::chrono::seconds(length);
-    //int64_t endTime = std::chrono::duration_cast<std::chrono::seconds>(end.time_since_epoch()).count();
-    //int64_t sStartTime = std::chrono::duration_cast<std::chrono::seconds>(p1.time_since_epoch()).count();
     core->ActivityManager().UpdateActivity(activity, [](discord::Result result) {
         std::cout << ((result == discord::Result::Ok) ? "Succeeded" : "Failed")
                   << " updating activity!\n";
     });
+#endif
 }
