@@ -32,6 +32,12 @@ SongSelectMenu::~SongSelectMenu() {
 }
 
 void SongSelectMenu::Load() {
+    if (TheSongList.songs.empty()) {
+        TraceLog(LOG_ERROR, "Cannot load SongSelectMenu: No songs loaded!");
+        TheMenuManager.SwitchScreen(MAIN_MENU);
+        return;
+    }
+
     if (!IsAudioDeviceReady()) {
         InitAudioDevice();
         TraceLog(LOG_INFO, "Initialized audio device");
@@ -61,11 +67,15 @@ void SongSelectMenu::Load() {
     if (TheSongList.curSong) {
         TheSongList.SongSelectOffset = TheSongList.curSong->songListPos - 5;
         if (TheSongList.SongSelectOffset < 1) TheSongList.SongSelectOffset = 1;
-        if (TheSongList.SongSelectOffset > TheSongList.listMenuEntries.size() - 10)
+        if (!TheSongList.listMenuEntries.empty() && TheSongList.SongSelectOffset > TheSongList.listMenuEntries.size() - 10)
             TheSongList.SongSelectOffset = TheSongList.listMenuEntries.size() - 10;
         animatingSongID = TheSongList.curSong->songListPos - 1;
         animationStartTime = GetTime();
-        ComputeSongTextMetrics(*TheSongList.curSong);
+        try {
+            ComputeSongTextMetrics(*TheSongList.curSong);
+        } catch (const std::exception& e) {
+            TraceLog(LOG_ERROR, "Failed to compute song text metrics: %s", e.what());
+        }
     } else {
         Encore::EncoreLog(LOG_WARNING, "No current song selected for offset adjustment");
         TheSongList.SongSelectOffset = 1;
@@ -73,13 +83,19 @@ void SongSelectMenu::Load() {
 
     // TheGameRenderer.streamsLoaded = false;
     // TheGameRenderer.midiLoaded = false;
-    for (Song& song : TheSongList.songs) {
-        if (!song.ini) {
-            song.LoadInfo(song.songInfoPath);
-        } else {
-            song.LoadInfoINI(song.songInfoPath);
+    if (!TheSongList.songs.empty()) {
+        for (Song& song : TheSongList.songs) {
+            try {
+                if (!song.ini) {
+                    song.LoadInfo(song.songInfoPath);
+                } else {
+                    song.LoadInfoINI(song.songInfoPath);
+                }
+                ComputeSongTextMetrics(song);
+            } catch (const std::exception& e) {
+                TraceLog(LOG_ERROR, "Failed to load song info: %s", e.what());
+            }
         }
-        ComputeSongTextMetrics(song);
     }
 }
 

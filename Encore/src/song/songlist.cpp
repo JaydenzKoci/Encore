@@ -176,7 +176,10 @@ void SongList::WriteCache() {
         Encore::EncoreLog(LOG_INFO, TextFormat("CACHE: Song length:    %01i", song.length));
     }
 
+    SongCache.flush();
     SongCache.close();
+    
+    Encore::EncoreLog(LOG_INFO, "CACHE: Song cache write completed");
 }
 
 // Using the more feature-complete ScanSongs function from songlist.cpp
@@ -291,8 +294,7 @@ void SongList::ScanSongs(const std::vector<std::filesystem::path> &songsFolder) 
         }
     }
 
-    Encore::EncoreLog(LOG_INFO, "CACHE: Rewriting song cache");
-    WriteCache();
+    Encore::EncoreLog(LOG_INFO, "CACHE: Song scan completed");
 }
 
 std::string GetLengthHeader(int length) {
@@ -358,9 +360,11 @@ std::vector<ListMenuEntry> SongList::GenerateSongEntriesWithHeaders(
 void SongList::LoadCache(const std::vector<std::filesystem::path> &songsFolder) {
     encore::bin_ifstream_native SongCacheIn("songCache.encr", std::ios::binary);
     if (!SongCacheIn) {
-        Encore::EncoreLog(LOG_WARNING, "CACHE: Failed to load song cache!");
+        Encore::EncoreLog(LOG_WARNING, "CACHE: Failed to load song cache, creating new cache!");
         SongCacheIn.close();
         ScanSongs(songsFolder);
+        WriteCache();
+        sortList(SortType::Title);
         return;
     }
 
@@ -368,9 +372,11 @@ void SongList::LoadCache(const std::vector<std::filesystem::path> &songsFolder) 
     uint32_t header;
     SongCacheIn >> header;
     if (header != SONG_CACHE_HEADER) {
-        Encore::EncoreLog(LOG_WARNING, "CACHE: Invalid song cache format, rescanning");
+        Encore::EncoreLog(LOG_WARNING, "CACHE: Invalid song cache format, rescanning and rebuilding cache");
         SongCacheIn.close();
         ScanSongs(songsFolder);
+        WriteCache();
+        sortList(SortType::Title);
         return;
     }
 
@@ -380,13 +386,15 @@ void SongList::LoadCache(const std::vector<std::filesystem::path> &songsFolder) 
         Encore::EncoreLog(
             LOG_WARNING,
             TextFormat(
-                "CACHE: Cache version %01i, but current version is %01i",
+                "CACHE: Cache version %01i, but current version is %01i, rebuilding cache",
                 version,
                 SONG_CACHE_VERSION
             )
         );
         SongCacheIn.close();
         ScanSongs(songsFolder);
+        WriteCache();
+        sortList(SortType::Title);
         return;
     }
 

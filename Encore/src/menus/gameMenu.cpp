@@ -189,7 +189,7 @@ void MainMenu::ChooseSplashText(std::filesystem::path directory) {
 }
 
 void MainMenu::PickRandomMenuSong() {
-    if (std::filesystem::exists("songCache.encr") && TheSongList.songs.size() > 0) {
+    if (TheSongList.songs.size() > 0) {
         AlbumArtBackground = menuAss.highwayTexture;
 
         try {
@@ -202,27 +202,31 @@ void MainMenu::PickRandomMenuSong() {
             TraceLog(LOG_INFO, TheSongList.curSong->title.c_str());
             songChosen = true;
             albumArtLoaded = true;
+
+            if (TheSongList.curSong->ini)
+                TheSongList.curSong->LoadAudioINI(TheSongList.curSong->songDir);
+            else
+                TheSongList.curSong->LoadAudio(TheSongList.curSong->songInfoPath);
+            TheAudioManager.loadStreams(TheSongList.curSong->stemsPath);
+            streamsLoaded = true;
+            for (int i = 0; i < TheAudioManager.loadedStreams.size(); i++) {
+                float Volume =
+                    TheGameSettings.avMainVolume * TheGameSettings.avMenuMusicVolume;
+                if (i == PartVocals)
+                    Volume = 0;
+                TheAudioManager.SetAudioStreamVolume(
+                    TheAudioManager.loadedStreams[i].handle, Volume
+                );
+            }
+            TheAudioManager.BeginPlayback(TheAudioManager.loadedStreams[0].handle);
         } catch (const std::exception &e) {
             std::cout << e.what() << std::endl;
             AlbumArtBackground = menuAss.highwayTexture;
-        };
-
-        if (TheSongList.curSong->ini)
-            TheSongList.curSong->LoadAudioINI(TheSongList.curSong->songDir);
-        else
-            TheSongList.curSong->LoadAudio(TheSongList.curSong->songInfoPath);
-        TheAudioManager.loadStreams(TheSongList.curSong->stemsPath);
-        streamsLoaded = true;
-        for (int i = 0; i < TheAudioManager.loadedStreams.size(); i++) {
-            float Volume =
-                TheGameSettings.avMainVolume * TheGameSettings.avMenuMusicVolume;
-            if (i == PartVocals)
-                Volume = 0;
-            TheAudioManager.SetAudioStreamVolume(
-                TheAudioManager.loadedStreams[i].handle, Volume
-            );
+            songChosen = false;
+            albumArtLoaded = false;
+            streamsLoaded = false;
+            return;
         }
-        TheAudioManager.BeginPlayback(TheAudioManager.loadedStreams[0].handle);
     }
 }
 void MainMenu::Load() {
@@ -374,6 +378,12 @@ void MainMenu::MainMenuScreen() {
                 TheAudioManager.unloadStreams();
                 streamsLoaded = false;
                 streamsPaused = false;
+                
+                if (!TheSongList.curSong || TheSongList.curSong < &TheSongList.songs[0] || 
+                    TheSongList.curSong > &TheSongList.songs[TheSongList.songs.size() - 1]) {
+                    TheSongList.curSong = &TheSongList.songs[0];
+                }
+                
                 for (Song &songi : TheSongList.songs) {
                     songi.titleScrollTime = GetTime();
                     songi.titleTextWidth =
