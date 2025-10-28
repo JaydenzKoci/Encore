@@ -347,7 +347,7 @@ function(setup_all_post_build TARGET_NAME TARGET_DIR)
             # x86 libraries
             add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/discord-rpc/windows/x86/discord_game_sdk.dll"
+                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/discord-rpc/windows/x86/discord-rpc.dll"
                     "${CMAKE_CURRENT_SOURCE_DIR}/lib/bass/windows/x86/bass.dll"
                     "${CMAKE_CURRENT_SOURCE_DIR}/lib/bass/windows/x86/bassopus.dll"
                     "${TARGET_DIR}/"
@@ -356,7 +356,7 @@ function(setup_all_post_build TARGET_NAME TARGET_DIR)
             # x64 libraries
             add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/discord-rpc/windows/x64/discord_game_sdk.dll"
+                    "${CMAKE_CURRENT_SOURCE_DIR}/lib/discord-rpc/windows/x64/discord-rpc.dll"
                     "${CMAKE_CURRENT_SOURCE_DIR}/lib/bass/windows/x64/bass.dll"
                     "${CMAKE_CURRENT_SOURCE_DIR}/lib/bass/windows/x64/bassopus.dll"
                     "${TARGET_DIR}/"

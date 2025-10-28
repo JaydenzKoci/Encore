@@ -155,9 +155,6 @@ int main(int argc, char *argv[]) {
     assert(AudioInitSuccessful == true);
     Encore::EncoreLog(LOG_INFO, "Audio successfully initialized");
 
-    TheGameRPC.Initialize();
-    Encore::EncoreLog(LOG_INFO, "Discord RPC initialized");
-
     SetExitKey(0);
     TheAudioManager.loadSample("Assets/combobreak.mp3", "miss");
     TheFrameManager.InitFrameManager();
@@ -220,8 +217,6 @@ int main(int argc, char *argv[]) {
         TheMenuManager.DrawMenu();
         
         Encore::DownloadOverlay::Draw();
-        
-        TheGameRPC.Update();
         
         EndDrawing();
         TheFrameManager.WaitForFrame();
