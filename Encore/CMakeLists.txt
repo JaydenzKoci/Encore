@@ -73,15 +73,8 @@ find_ffmpeg_libraries()
 
 option(SUPPORT_FILEFORMAT_JPG "Support loading JPG as textures" ON)
 
-file(GLOB_RECURSE SRC_FILES "src/*.cpp")
+file(GLOB_RECURSE SRC_FILES "src/*.cpp" "include/*.cpp" "include/*.c")
 file(GLOB_RECURSE INC_FILES "include/*.h" "include/*.h*" "src/*.h")
-
-# Only include Discord SDK source files on Windows
-if(WIN32)
-    file(GLOB_RECURSE DISCORD_SRC_FILES "include/discord-rpc/*.cpp" "include/discord-rpc/*.c")
-    list(APPEND SRC_FILES ${DISCORD_SRC_FILES})
-endif()
-
 if (WIN32)
 add_executable(Encore ${SRC_FILES} ${INC_FILES} "resources.rc")
 else()
@@ -94,27 +87,33 @@ endif()
 target_include_directories(Encore PRIVATE "include" "src" ${FFMPEG_INCLUDE_DIR})
 if(WIN32)
 if (CMAKE_SIZEOF_VOID_P EQUAL 4)
-find_library(DISCORD-RPC NAMES discord_game_sdk PATHS "lib/discord-rpc/windows/x86/")
+find_library(DISCORD-RPC NAMES discord-rpc PATHS "lib/discord-rpc/windows/x86/")
 find_library(BASS NAMES bass PATHS "lib/bass/windows/x86/")
 find_library(BASSOPUS NAMES bassopus PATHS "lib/bass/windows/x86/")
 endif()
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-find_library(DISCORD-RPC NAMES discord_game_sdk PATHS "lib/discord-rpc/windows/x64/")
+find_library(DISCORD-RPC NAMES discord-rpc PATHS "lib/discord-rpc/windows/x64/")
 find_library(BASS NAMES bass PATHS "lib/bass/windows/x64/")
 find_library(BASSOPUS NAMES bassopus PATHS "lib/bass/windows/x64/")
 endif()
+
 endif()
 if(UNIX AND NOT APPLE)
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+find_library(DISCORD-RPC NAMES discord-rpc PATHS "lib/discord-rpc/linux/x64")
 find_library(BASS NAMES bass PATHS "lib/bass/linux/x86_64")
 find_library(BASSOPUS NAMES bassopus PATHS "lib/bass/linux/x86_64")
+
 # Set RPATH to look in the same directory as the executable
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath='$ORIGIN'")
 endif()
+
 endif()
 if(APPLE)
+find_library(DISCORD-RPC NAMES discord-rpc PATHS "lib/discord-rpc/macos")
 find_library(BASS NAMES bass PATHS "lib/bass/macos")
 find_library(BASSOPUS NAMES bassopus PATHS "lib/bass/macos")
+
 endif()
 
 execute_process(
@@ -153,14 +152,9 @@ raylib
 nlohmann_json::nlohmann_json
 ${BASS}
 ${BASSOPUS}
+${DISCORD-RPC}
 ${FFMPEG_LIBRARIES}
 )
-
-# Only add Discord SDK on Windows (Game SDK not available on other platforms)
-if(WIN32 AND DISCORD-RPC)
-    list(APPEND ENCORE_LIBRARIES ${DISCORD-RPC})
-    target_compile_definitions(Encore PRIVATE DISCORD_ENABLED)
-endif()
 if(UNIX AND NOT APPLE)
 find_package(ZLIB REQUIRED)
 list(APPEND ENCORE_LIBRARIES ZLIB::ZLIB)
