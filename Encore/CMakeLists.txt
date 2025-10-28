@@ -102,6 +102,7 @@ if(UNIX AND NOT APPLE)
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
 find_library(BASS NAMES bass PATHS "lib/bass/linux/x86_64")
 find_library(BASSOPUS NAMES bassopus PATHS "lib/bass/linux/x86_64")
+find_library(DISCORD-SDK NAMES discord-rpc PATHS "lib/discord-rpc/linux/x64")
 
 # Set RPATH to look in the same directory as the executable
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath='$ORIGIN'")
@@ -111,6 +112,7 @@ endif()
 if(APPLE)
 find_library(BASS NAMES bass PATHS "lib/bass/macos")
 find_library(BASSOPUS NAMES bassopus PATHS "lib/bass/macos")
+find_library(DISCORD-SDK NAMES discord-rpc PATHS "lib/discord-rpc/macos")
 
 endif()
 
@@ -153,8 +155,8 @@ ${BASSOPUS}
 ${FFMPEG_LIBRARIES}
 )
 
-# Only add Discord SDK on Windows
-if(WIN32 AND DISCORD-SDK)
+# Add Discord SDK on all platforms if found
+if(DISCORD-SDK)
     list(APPEND ENCORE_LIBRARIES ${DISCORD-SDK})
     target_compile_definitions(Encore PRIVATE DISCORD_ENABLED)
 endif()
