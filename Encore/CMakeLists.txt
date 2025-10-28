@@ -73,8 +73,15 @@ find_ffmpeg_libraries()
 
 option(SUPPORT_FILEFORMAT_JPG "Support loading JPG as textures" ON)
 
-file(GLOB_RECURSE SRC_FILES "src/*.cpp" "include/*.cpp" "include/*.c")
+file(GLOB_RECURSE SRC_FILES "src/*.cpp")
 file(GLOB_RECURSE INC_FILES "include/*.h" "include/*.h*" "src/*.h")
+
+# Only include Discord SDK source files on Windows
+if(WIN32)
+    file(GLOB_RECURSE DISCORD_SRC_FILES "include/discord-rpc/*.cpp" "include/discord-rpc/*.c")
+    list(APPEND SRC_FILES ${DISCORD_SRC_FILES})
+endif()
+
 if (WIN32)
 add_executable(Encore ${SRC_FILES} ${INC_FILES} "resources.rc")
 else()
