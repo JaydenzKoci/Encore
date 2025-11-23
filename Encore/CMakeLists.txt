@@ -81,7 +81,8 @@ else()
 add_executable(Encore ${SRC_FILES} ${INC_FILES}
         src/util/trackDownloader.cpp
         src/util/downloadOverlay.cpp
-        src/menus/DownloadSongs.cpp)
+        src/menus/DownloadSongs.cpp
+        src/leaderboard/leaderboard.cpp)
 endif()
 
 target_include_directories(Encore PRIVATE "include" "src" ${FFMPEG_INCLUDE_DIR})

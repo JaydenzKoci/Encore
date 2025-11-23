@@ -11,6 +11,7 @@
 #include "users/playerManager.h"
 #include "OvershellHelper.h"
 #include "MenuManager.h"
+#include "leaderboard/leaderboard.h"
 
 void resultsMenu::ControllerInputCallback(int joypadID, GLFWgamepadstate state) {}
 void resultsMenu::KeyboardInputCallback(int key, int scancode, int action, int mods) {}
@@ -64,6 +65,24 @@ void resultsMenu::Load() {
         std::cout << player.Name << " Overdrive Score: " << stats->OverdriveScore << std::endl;
         std::cout << player.Name << " Perfect Score: " << stats->PerfectScore << std::endl;
         std::cout << player.Name << " Note Score: " << stats->NoteScore << std::endl;
+        
+        if (TheSongList.curSong && !player.Bot) {
+            std::string songID = LeaderboardManager::GenerateSongID(
+                TheSongList.curSong->title, 
+                TheSongList.curSong->artist
+            );
+            LeaderboardManager::SaveScore(
+                player.PlayerID,
+                songID,
+                stats->Score,
+                stats->Stars(),
+                player.Difficulty,
+                player.Instrument,
+                stats->PerfectHit,
+                stats->NotesHit - stats->PerfectHit,
+                stats->NotesMissed
+            );
+        }
     }
 }
 

@@ -177,6 +177,7 @@ public:
     int length = 0;
     int songListPos = 0;
     int BeatTrackID = 0;
+    std::string songID = "";
 
     bool AlbumArtLoaded = false;
     double music_start = 0.0;

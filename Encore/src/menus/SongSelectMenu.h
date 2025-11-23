@@ -45,10 +45,16 @@ private:
         float artistFontSize;
         float titleTextWidth;
         float artistTextWidth;
+        bool titleNeedsScroll;
+        bool artistNeedsScroll;
     };
     std::map<int, TextMetrics> songTextMetrics;
+    std::map<int, double> scrollStartTimes;
+    std::map<int, bool> scrollDirections;
+    bool isDraggingScrollbar = false;
 
     void ComputeSongTextMetrics(Song& song);
+    float GetScrollOffset(int songID, float textWidth, float maxWidth, double currentTime, bool isTitle, bool isSelected);
     static void DrawAlbumArtBackgroundPro(const Texture2D& texture, const Rectangle sourceRect) {
         Units u = Units::getInstance();
         if (IsTextureValid(texture)) {

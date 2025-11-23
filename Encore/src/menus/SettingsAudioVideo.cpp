@@ -33,6 +33,7 @@ float avBackingTrackVolume = 0.0f;
 bool BackgroundBeatFlash = false;
 bool BackgroundTint = true;
 bool VerticalSync = false;
+bool CompactScoreDisplay = false;
 
 void SettingsAudioVideo::Draw() {
     Units &u = Units::getInstance();
@@ -122,6 +123,11 @@ void SettingsAudioVideo::Draw() {
         // Background Tint
         {
             "Background Tint",
+            "TBD"
+        },
+        // Compact Score Display
+        {
+            "Compact Score Display",
             "TBD"
         },
         // Framerate
@@ -537,6 +543,39 @@ void SettingsAudioVideo::Draw() {
     }
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
 
+    // Compact Score Display
+    settingOffset++;
+    float compactScoreTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    if (showVolumeSettings) {
+        compactScoreTop += verticalSubmenuGap - 7.0f;
+    }
+    Rectangle compactScoreBoxRect = {boxLeft - borderWidth, compactScoreTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, compactScoreTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, compactScoreTop, boxWidth, EntryHeight, boxBackground);
+    Vector2 compactScoreTextSize = MeasureTextEx(assets.rubikBold, "Compact Score Display", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Compact Score Display", {boxLeft + u.winpct(0.01f), compactScoreTop + (EntryHeight - compactScoreTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    Rectangle offButtonRect4 = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, compactScoreTop, toggleButtonWidth, buttonHeight};
+    Rectangle onButtonRect4 = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, compactScoreTop, toggleButtonWidth, buttonHeight};
+    if (CheckCollisionPointRec(mousePos, offButtonRect4) || CheckCollisionPointRec(mousePos, onButtonRect4)) {
+        selectedIndex = 11;
+        isHovering = true;
+        DrawRectangleLinesEx(compactScoreBoxRect, highlightBorderWidth, glowColor);
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, CompactScoreDisplay ? defaultColor : ColorToInt(activeColor));
+    if (GuiButton(offButtonRect4, "Off")) {
+        CompactScoreDisplay = false;
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, CompactScoreDisplay ? ColorToInt(activeColor) : defaultColor);
+    if (GuiButton(onButtonRect4, "On")) {
+        CompactScoreDisplay = true;
+    }
+    if (!CompactScoreDisplay) {
+        DrawRectangleLinesEx(offButtonRect4, highlightBorderWidth, glowColor);
+    } else {
+        DrawRectangleLinesEx(onButtonRect4, highlightBorderWidth, glowColor);
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
+
     // Framerate
     settingOffset++;
     float framerateTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
@@ -552,7 +591,7 @@ void SettingsAudioVideo::Draw() {
     Rectangle frSliderRect = {frDecButtonRect.x + buttonWidth15, framerateTop, adjustedSliderWidth, buttonHeight};
     Rectangle frIncButtonRect = {frSliderRect.x + frSliderRect.width, framerateTop, buttonWidth15Inc, buttonHeight};
     if (CheckCollisionPointRec(mousePos, frDecButtonRect) || CheckCollisionPointRec(mousePos, frSliderRect) || CheckCollisionPointRec(mousePos, frIncButtonRect)) {
-        selectedIndex = 11;
+        selectedIndex = 12;
         isHovering = true;
         DrawRectangleLinesEx(framerateBoxRect, highlightBorderWidth, glowColor);
     }
@@ -588,7 +627,7 @@ void SettingsAudioVideo::Draw() {
     Rectangle offButtonRect2 = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, vsyncTop, toggleButtonWidth, buttonHeight};
     Rectangle onButtonRect2 = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, vsyncTop, toggleButtonWidth, buttonHeight};
     if (CheckCollisionPointRec(mousePos, offButtonRect2) || CheckCollisionPointRec(mousePos, onButtonRect2)) {
-        selectedIndex = 12;
+        selectedIndex = 13;
         isHovering = true;
         DrawRectangleLinesEx(vsyncBoxRect, highlightBorderWidth, glowColor);
     }
@@ -721,6 +760,7 @@ void SettingsAudioVideo::Load() {
     BackgroundBeatFlash = TheGameSettings.BackgroundBeatFlash;
     BackgroundTint = TheGameSettings.BackgroundTint;
     VerticalSync = TheGameSettings.VerticalSync;
+    CompactScoreDisplay = TheGameSettings.CompactScoreDisplay;
 
     TraceLog(LOG_INFO, "Loaded audio/video settings: AudioOffset=%d, Framerate=%d, avMainVolume=%.2f",
              AudioOffset, Framerate, avMainVolume);
@@ -739,6 +779,7 @@ void SettingsAudioVideo::Save() {
     TheGameSettings.BackgroundBeatFlash = BackgroundBeatFlash;
     TheGameSettings.BackgroundTint = BackgroundTint;
     TheGameSettings.VerticalSync = VerticalSync;
+    TheGameSettings.CompactScoreDisplay = CompactScoreDisplay;
 
     TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
 

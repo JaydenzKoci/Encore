@@ -43,7 +43,9 @@
     OPTION(int, TrackSpeed, 4)                                                          \
     OPTION(float, HighwayLengthMult, 1.0f)                                              \
     OPTION(bool, MissHighwayColor, false)                                               \
-    OPTION(int, ControllerType, 0)
+    OPTION(int, ControllerType, 0)                                                      \
+    OPTION(bool, ScrollingSongText, true)                                               \
+    OPTION(bool, CompactScoreDisplay, false)
 namespace Encore {
     inline void WriteJsonFile(const std::filesystem::path &FileToWrite, const nlohmann::json &JSONobject) {
         std::ofstream o(FileToWrite, std::ios::out | std::ios::trunc);
@@ -117,6 +119,8 @@ namespace Encore {
         HighwayLengthMult,
         MissHighwayColor,
         ControllerType,
+        ScrollingSongText,
+        CompactScoreDisplay,
         Keybinds4K,
         Keybinds5K,
         Keybinds4KAlt,
