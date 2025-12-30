@@ -1,5 +1,6 @@
 #include "songlist.h"
 #include "util/enclog.h"
+#include "leaderboard/leaderboard.h"
 
 #include <set>
 #include <algorithm>
@@ -143,6 +144,54 @@ void SongList::sortList(SortType sortType, int &selectedSong) {
         }
     }
     listMenuEntries = GenerateSongEntriesWithHeaders(songs, sortType);
+}
+
+struct SongScorePair {
+    size_t songIndex;
+    int score;
+};
+
+void SongList::sortListByScore(int instrumentFilter, int &selectedSong, const std::string& playerUUID) {
+    Song curSong;
+    bool hasCurrentSong = selectedSong >= 0 && selectedSong < songs.size();
+    if (hasCurrentSong) {
+        curSong = songs[selectedSong];
+    }
+    selectedSong = 0;
+    
+    std::vector<SongScorePair> songScores;
+    songScores.reserve(songs.size());
+    
+    for (size_t i = 0; i < songs.size(); i++) {
+        std::string songID = LeaderboardManager::GenerateSongID(songs[i].title, songs[i].artist);
+        ScoreData scoreData = LeaderboardManager::GetHighestScoreForInstrument(playerUUID, songID, instrumentFilter);
+        songScores.push_back({i, scoreData.hasScore ? scoreData.score : -1});
+    }
+    
+    std::sort(songScores.begin(), songScores.end(), [](const SongScorePair& a, const SongScorePair& b) {
+        if (a.score == -1 && b.score == -1) return false;
+        if (a.score == -1) return false;
+        if (b.score == -1) return true;
+        return a.score > b.score;
+    });
+    
+    std::vector<Song> sortedSongs;
+    sortedSongs.reserve(songs.size());
+    for (const auto& pair : songScores) {
+        sortedSongs.push_back(std::move(songs[pair.songIndex]));
+    }
+    songs = std::move(sortedSongs);
+    
+    if (hasCurrentSong) {
+        for (size_t i = 0; i < songs.size(); i++) {
+            if (songs[i].artist == curSong.artist && songs[i].title == curSong.title) {
+                selectedSong = i;
+                break;
+            }
+        }
+    }
+    
+    listMenuEntries = GenerateSongEntriesWithHeaders(songs, SortType::Score);
 }
 
 void SongList::WriteCache() {
@@ -338,6 +387,10 @@ std::vector<ListMenuEntry> SongList::GenerateSongEntriesWithHeaders(
         }
         case SortType::Year: {
             header = song.releaseYear.empty() ? "Unknown Year" : song.releaseYear;
+            break;
+        }
+        case SortType::Score: {
+            header = "By Score";
             break;
         }
         default:

@@ -45,7 +45,10 @@
     OPTION(bool, MissHighwayColor, false)                                               \
     OPTION(int, ControllerType, 0)                                                      \
     OPTION(bool, ScrollingSongText, true)                                               \
-    OPTION(bool, CompactScoreDisplay, false)
+    OPTION(bool, CompactScoreDisplay, false)                                            \
+    OPTION(int, ScoreInstrumentFilter, 4)                                               \
+    OPTION(bool, ShowInstrumentIcon, true)                                              \
+    OPTION(int, InstrumentIconPosition, 1)
 namespace Encore {
     inline void WriteJsonFile(const std::filesystem::path &FileToWrite, const nlohmann::json &JSONobject) {
         std::ofstream o(FileToWrite, std::ios::out | std::ios::trunc);
@@ -121,6 +124,9 @@ namespace Encore {
         ControllerType,
         ScrollingSongText,
         CompactScoreDisplay,
+        ScoreInstrumentFilter,
+        ShowInstrumentIcon,
+        InstrumentIconPosition,
         Keybinds4K,
         Keybinds5K,
         Keybinds4KAlt,

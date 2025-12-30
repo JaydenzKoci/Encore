@@ -11,6 +11,7 @@
 #include "uiUnits.h"
 #include "song/audio.h"
 #include "song/songlist.h"
+#include "song/chart.h"
 #include "raymath.h"
 #include "raygui.h"
 #include "gameplay/enctime.h"
@@ -22,10 +23,49 @@
 #include "OvershellHelper.h"
 #include "settings-old.h"
 #include "settings.h"
+#include "leaderboard/leaderboard.h"
 
 
 GameplayMenu::GameplayMenu() {}
 GameplayMenu::~GameplayMenu() {}
+
+void GameplayMenu::DrawStreakPopEffect(int playerIndex, float centerX, float centerY, double currentTime) {
+    if (playerIndex < 0 || playerIndex >= 4) return;
+    
+    StreakPopEffect& effect = streakPopEffects[playerIndex];
+    if (!effect.active) return;
+    
+    double timeSinceTrigger = currentTime - effect.triggerTime;
+    if (timeSinceTrigger > STREAK_POP_DURATION) {
+        effect.active = false;
+        return;
+    }
+    
+    float progress = static_cast<float>(timeSinceTrigger / STREAK_POP_DURATION);
+    float easedProgress = getEasingFunction(EaseOutQuart)(progress);
+    
+    Units &u = Units::getInstance();
+    float minRadius = u.hinpct(0.015f);
+    float maxRadius = u.hinpct(0.055f);
+    float currentRadius = minRadius + (maxRadius - minRadius) * easedProgress;
+    
+    float maxThickness = u.hinpct(0.01f);
+    float minThickness = u.hinpct(0.002f);
+    float currentThickness = maxThickness - (maxThickness - minThickness) * easedProgress;
+    
+    unsigned char alpha = static_cast<unsigned char>(255 * (1.0f - easedProgress));
+    
+    Color ringColor = { 255, 255, 255, alpha };
+    DrawRing(
+        { centerX, centerY },
+        currentRadius - currentThickness,
+        currentRadius,
+        0.0f,
+        360.0f,
+        36,
+        ringColor
+    );
+}
 
 void GameplayMenu::CleanupAndSwitchToResults() {
     TheGameRenderer.backgroundVideo.Stop();
@@ -54,7 +94,6 @@ void GameplayMenu::CleanupAndSwitchToResults() {
         }
         
         if (player.stats) {
-            player.stats->Quit = true;
             player.stats->Paused = false;
             player.stats->Overdrive = false;
             player.stats->Mute = false;
@@ -596,6 +635,134 @@ void GameplayMenu::DrawGameplayStars(
     }
 }
 
+void GameplayMenu::DrawInstrumentIcon(Units &u, Assets &assets, float scoreY, double songTime) {
+    extern Encore::Settings TheGameSettings;
+    
+    if (!TheGameSettings.ShowInstrumentIcon) {
+        return;
+    }
+    
+    if (ThePlayerManager.PlayersActive != 1) {
+        return;
+    }
+    
+    Player &player = ThePlayerManager.GetActivePlayer(0);
+    
+    if (player.Instrument != PartGuitar && player.Instrument != PlasticGuitar) {
+        return;
+    }
+    
+    Chart &curChart = TheSongList.curSong->parts[player.Instrument]->charts[player.Difficulty];
+    
+    if (!curChart.hasInstrumentTextEvents()) {
+        return;
+    }
+    
+    InstrumentType currentType = curChart.getCurrentInstrumentType(songTime);
+    
+    float iconSize = u.hinpct(0.10f);
+    
+    float iconAlpha = 1.0f;
+    if (TheGameSettings.TrackFading && ThePlayerManager.PlayersActive == 1) {
+        iconAlpha = TheGameRenderer.GetRendererAlpha(0);
+    }
+    
+    if (iconAlpha < 0.01f) {
+        return;
+    }
+    
+    float iconX, iconY;
+    
+    Camera3D worldCamera = TheGameRenderer.cameraVectors[ThePlayerManager.PlayersActive - 1][TheGameRenderer.cameraSel];
+    Vector2 trackRightEdge = GetWorldToScreen({ 2.5f, 0.0f, 2.0f }, worldCamera);
+    Vector2 trackLeftEdge = GetWorldToScreen({ -2.5f, 0.0f, 2.0f }, worldCamera);
+    float trackRightX = trackRightEdge.x - TheGameRenderer.renderPos;
+    float trackLeftX = trackLeftEdge.x - TheGameRenderer.renderPos;
+    
+    int iconPosition = TheGameSettings.InstrumentIconPosition;
+    
+    float padding = u.hinpct(0.02f);
+    
+    if (iconPosition == 2 || iconPosition == 3) {
+        iconSize = u.hinpct(0.09f);
+    }
+    
+    switch (iconPosition) {
+        case 0:
+            iconX = trackLeftX - iconSize - padding;
+            iconY = GetScreenHeight() * 0.5f - iconSize * 0.5f;
+            break;
+        case 1:
+            iconX = trackRightX + padding;
+            iconY = GetScreenHeight() * 0.5f - iconSize * 0.5f;
+            break;
+        case 2:
+            iconX = trackLeftX - iconSize - padding;
+            iconY = GetScreenHeight() - iconSize;
+            break;
+        case 3:
+            iconX = trackRightX + padding;
+            iconY = GetScreenHeight() - iconSize;
+            break;
+        default:
+            iconX = trackLeftX - iconSize - padding;
+            iconY = GetScreenHeight() * 0.5f - iconSize * 0.5f;
+            break;
+    }
+    
+    Texture2D iconTexture;
+    if (currentType == InstrumentType::Guitar) {
+        iconTexture = assets.InstIcons[2];
+    } else {
+        iconTexture = assets.InstIcons[3];
+    }
+    
+    unsigned char alpha = (unsigned char)(iconAlpha * 255);
+    Color iconColor = { 255, 255, 255, alpha };
+    
+    Rectangle srcRect = { 0, 0, (float)iconTexture.width, (float)iconTexture.height };
+    Rectangle destRect = { iconX, iconY, iconSize, iconSize };
+    DrawTexturePro(iconTexture, srcRect, destRect, { 0, 0 }, 0, iconColor);
+}
+
+void GameplayMenu::DrawNewHighScoreNotification(Units &u, Assets &assets, double currentTime) {
+    if (!highScoreEffect.triggered) {
+        return;
+    }
+    
+    double timeSinceTrigger = currentTime - highScoreEffect.triggerTime;
+    
+    float displayDuration = 3.0f;
+    float fadeOutDuration = 0.5f;
+    
+    if (timeSinceTrigger > displayDuration) {
+        return;
+    }
+    
+    float bgAlpha = 1.0f;
+    if (timeSinceTrigger > displayDuration - fadeOutDuration) {
+        bgAlpha = (displayDuration - timeSinceTrigger) / fadeOutDuration;
+        if (bgAlpha < 0) bgAlpha = 0;
+    }
+    
+    const char* text = "New High Score";
+    float fontSize = u.hinpct(0.05f);
+    Vector2 textSize = MeasureTextEx(assets.rubikBold, text, fontSize, 0);
+    
+    float textX = (GetScreenWidth() - textSize.x) / 2;
+    float textY = GetScreenHeight() * 0.20f;
+    
+    float padding = u.hinpct(0.015f);
+    float bgY = textY - padding;
+    float bgHeight = textSize.y + padding * 2;
+    
+    unsigned char bgAlphaChar = (unsigned char)(bgAlpha * 180);
+    DrawRectangle(0, bgY, GetScreenWidth(), bgHeight, Color{0, 0, 0, bgAlphaChar});
+    
+    unsigned char textAlpha = (unsigned char)(bgAlpha * 255);
+    DrawTextEx(assets.rubikBold, text, {textX, textY}, fontSize, 0, Color{255, 255, 255, textAlpha});
+}
+
 unsigned char BeatToCharViaTickThing(
     int tick, int MinBrightness, int MaxBrightness, int QuarterNoteLength
 ) {
@@ -747,6 +914,35 @@ void GameplayMenu::Draw() {
             TheSongTime.GetSongTime(),
             *TheSongList.curSong
         );
+        
+        Player& player = ThePlayerManager.GetActivePlayer(pnum);
+        if (pnum < 4) {
+            int currentCombo = player.stats->Combo;
+            StreakPopEffect& effect = streakPopEffects[pnum];
+            
+            int maxComboForMeter = player.stats->maxMultForMeter() * 10;
+            
+            if (currentCombo > 0 && currentCombo % 10 == 0 && currentCombo != effect.lastCombo 
+                && currentCombo <= maxComboForMeter) {
+                if (currentCombo > effect.lastCombo) {
+                    effect.active = true;
+                    effect.triggerTime = curTime;
+                }
+            }
+            effect.lastCombo = currentCombo;
+            
+            if (effect.active) {
+                Vector3 multMeterWorldPos = { 0.0f, 0.0f, 1.1f };
+                Camera3D worldCamera = TheGameRenderer.cameraVectors[ThePlayerManager.PlayersActive - 1][TheGameRenderer.cameraSel];
+                Vector2 multMeterScreenPos = GetWorldToScreen(multMeterWorldPos, worldCamera);
+                
+                float effectCenterX = multMeterScreenPos.x - TheGameRenderer.renderPos;
+                float effectCenterY = multMeterScreenPos.y;
+                
+                DrawStreakPopEffect(pnum, effectCenterX, effectCenterY, curTime);
+            }
+        }
+        
         std::string NameText = ThePlayerManager.GetActivePlayer(pnum).Name;
         if (ThePlayerManager.GetActivePlayer(pnum).Bot) NameText.append(" - AUTOPLAY");
         float CenterPosForText =
@@ -896,6 +1092,15 @@ void GameplayMenu::Draw() {
     DrawGameplayStars(u, assets, scorePos, starY);
     DrawTimerbox(u, assets, scoreY);
     DrawScorebox(u, assets, scoreY);
+    DrawInstrumentIcon(u, assets, scoreY, TheSongTime.GetSongTime());
+    
+    if (highScoreEffect.highScoreLoaded && !highScoreEffect.triggered && highScoreEffect.previousHighScore > 0) {
+        if (ThePlayerManager.BandStats->Score > highScoreEffect.previousHighScore) {
+            highScoreEffect.triggered = true;
+            highScoreEffect.triggerTime = curTime;
+        }
+    }
+    DrawNewHighScoreNotification(u, assets, curTime);
 
     float SongNameWidth = MeasureTextEx(
                               assets.rubikBoldItalic,
@@ -1143,6 +1348,12 @@ void GameplayMenu::Draw() {
             ThePlayerManager.BandStats->Paused = false;
         }
         if (GuiButton(QuitBox, "Back to Music Library")) {
+            for (int playerNum = 0; playerNum < ThePlayerManager.PlayersActive; playerNum++) {
+                Player& player = ThePlayerManager.GetActivePlayer(playerNum);
+                if (player.stats) {
+                    player.stats->Quit = true;
+                }
+            }
             CleanupAndSwitchToResults();
             SETDEFAULTSTYLE();
             return;
@@ -1349,6 +1560,32 @@ void GameplayMenu::Draw() {
 
 void GameplayMenu::Load() {
     TheGameRenderer.ResetFadeState();
+    
+    for (int i = 0; i < 4; i++) {
+        streakPopEffects[i].active = false;
+        streakPopEffects[i].triggerTime = 0.0;
+        streakPopEffects[i].lastCombo = 0;
+    }
+    
+    highScoreEffect.triggered = false;
+    highScoreEffect.triggerTime = 0.0;
+    highScoreEffect.previousHighScore = 0;
+    highScoreEffect.highScoreLoaded = false;
+    
+    if (ThePlayerManager.PlayersActive == 1) {
+        Player &player = ThePlayerManager.GetActivePlayer(0);
+        std::string songID = LeaderboardManager::GenerateSongID(
+            TheSongList.curSong->title,
+            TheSongList.curSong->artist
+        );
+        ScoreData highScore = LeaderboardManager::GetHighestScoreForInstrument(
+            player.PlayerID,
+            songID,
+            static_cast<int>(player.Instrument)
+        );
+        highScoreEffect.previousHighScore = highScore.hasScore ? highScore.score : 0;
+        highScoreEffect.highScoreLoaded = true;
+    }
     
     TheSongList.curSong->LoadAlbumArt();
     

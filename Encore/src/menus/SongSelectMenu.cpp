@@ -14,6 +14,7 @@
 #include "gameplay/gameplayRenderer.h"
 #include "song/audio.h"
 #include "song/songlist.h"
+#include "song/scoring.h"
 #include "assets.h"
 #include "leaderboard/leaderboard.h"
 #include "users/playerManager.h"
@@ -489,8 +490,8 @@ void SongSelectMenu::Draw() {
     }
 
     BeginScissorMode(0, u.hpct(0.15f), u.RightSide - u.winpct(0.25f), scissorHeight);
-    for (int i = TheSongList.SongSelectOffset; i < TheSongList.listMenuEntries.size() && i < TheSongList.SongSelectOffset + 10; i++) {
-        if (TheSongList.listMenuEntries.size() == i) break;
+    for (int i = TheSongList.SongSelectOffset; i < (int)TheSongList.listMenuEntries.size() && i < TheSongList.SongSelectOffset + 10; i++) {
+        if ((int)TheSongList.listMenuEntries.size() == i) break;
         float currentEntryHeight = baseSongEntryHeight;
         bool isCurSong = TheSongList.curSong && i == TheSongList.curSong->songListPos - 1;
         bool isDeselecting = i == prevAnimatingSongID && !isCurSong;
@@ -617,67 +618,94 @@ void SongSelectMenu::Draw() {
             if (!TheGameSettings.CompactScoreDisplay && isCurSong && ThePlayerManager.PlayersActive > 0) {
                 Player &player = ThePlayerManager.GetActivePlayer(0);
                 std::string songIDForList = LeaderboardManager::GenerateSongID(songi.title, songi.artist);
-                ScoreData highScoreForList = LeaderboardManager::GetHighestScore(player.PlayerID, songIDForList);
+                ScoreData highScoreForList = LeaderboardManager::GetHighestScoreForInstrument(player.PlayerID, songIDForList, static_cast<int>(GetScoreInstrumentFilter()));
+                
+                float titleOnlyHeight = titleFontSize;
+                float titleY = songYPos + (currentEntryHeight - titleOnlyHeight) / 4;
+                
+                BeginScissorMode(songXPos + textXOffset, songYPos, songTitleWidth, currentEntryHeight / 2);
+                DrawTextEx(
+                    assets.rubikBold,
+                    songi.title.c_str(),
+                    { songXPos + textXOffset + titleScrollOffset, titleY },
+                    titleFontSize,
+                    0,
+                    WHITE
+                );
+                EndScissorMode();
+                
+                float scoreY = titleY + titleFontSize + u.hinpct(0.002f);
+                float scoreFontSize = u.hinpct(0.025f);
+                
+                // Draw instrument icon to the left of the score
+                float iconSize = u.hinpct(0.022f);
+                int iconIndex = GetScoreInstrumentIconIndex();
+                DrawTexturePro(
+                    assets.InstIcons[iconIndex],
+                    { 0, 0, (float)assets.InstIcons[iconIndex].width, (float)assets.InstIcons[iconIndex].height },
+                    { songXPos + textXOffset, scoreY, iconSize, iconSize },
+                    { 0, 0 },
+                    0,
+                    WHITE
+                );
+                
+                float scoreStartX = songXPos + textXOffset + iconSize + u.winpct(0.005f);
+                int displayScore = highScoreForList.hasScore ? highScoreForList.score : 0;
+                std::string scoreText = GameMenu::scoreCommaFormatter(displayScore);
+                float scoreTextWidth = MeasureTextEx(assets.rubikBold, scoreText.c_str(), scoreFontSize, 0).x;
+                
+                DrawTextEx(assets.rubikBold, scoreText.c_str(), { scoreStartX, scoreY }, scoreFontSize, 0, GetColor(0x00adffFF));
+                
+                float starScale = u.hinpct(0.02f);
+                float starX = scoreStartX + scoreTextWidth + u.winpct(0.01f);
                 
                 if (highScoreForList.hasScore) {
-                    float titleOnlyHeight = titleFontSize;
-                    float titleY = songYPos + (currentEntryHeight - titleOnlyHeight) / 4;
+                    std::string percentageText = TextFormat("%.0f%%", highScoreForList.hitPercentage);
+                    Color percentageColor = (highScoreForList.hitPercentage >= 100.0f) ? GOLD : WHITE;
+                    float percentageTextWidth = MeasureTextEx(assets.rubik, percentageText.c_str(), u.hinpct(0.02f), 0).x;
                     
-                    BeginScissorMode(songXPos + textXOffset, songYPos, songTitleWidth, currentEntryHeight / 2);
-                    DrawTextEx(
-                        assets.rubikBold,
-                        songi.title.c_str(),
-                        { songXPos + textXOffset + titleScrollOffset, titleY },
-                        titleFontSize,
-                        0,
-                        WHITE
-                    );
-                    EndScissorMode();
+                    float percentageX = scoreStartX + scoreTextWidth + u.winpct(0.01f);
+                    DrawTextEx(assets.rubik, percentageText.c_str(), { percentageX, scoreY + u.hinpct(0.002f) }, u.hinpct(0.02f), 0, percentageColor);
                     
-                    float scoreY = titleY + titleFontSize + u.hinpct(0.002f);
-                    float scoreFontSize = u.hinpct(0.025f);
-                    std::string scoreText = GameMenu::scoreCommaFormatter(highScoreForList.score);
-                    float scoreTextWidth = MeasureTextEx(assets.rubikBold, scoreText.c_str(), scoreFontSize, 0).x;
-                    
-                    DrawTextEx(assets.rubikBold, scoreText.c_str(), { songXPos + textXOffset, scoreY }, scoreFontSize, 0, GetColor(0x00adffFF));
-                    
-                    float starScale = u.hinpct(0.02f);
-                    float starX = songXPos + textXOffset + scoreTextWidth + u.winpct(0.01f);
-                    for (int s = 0; s < 5; s++) {
+                    if (highScoreForList.hitPercentage >= 100.0f) {
+                        float crownSize = u.hinpct(0.02f);
                         DrawTexturePro(
-                            assets.emptyStar,
-                            { 0, 0, (float)assets.emptyStar.width, (float)assets.emptyStar.height },
-                            { starX + (s * starScale), scoreY, starScale, starScale },
+                            assets.crown,
+                            { 0, 0, (float)assets.crown.width, (float)assets.crown.height },
+                            { percentageX + percentageTextWidth + u.winpct(0.003f), scoreY, crownSize, crownSize },
                             { 0, 0 },
                             0,
                             WHITE
                         );
                     }
+                    
+                    starX = percentageX + percentageTextWidth + u.winpct(0.01f);
+                    if (highScoreForList.hitPercentage >= 100.0f) {
+                        starX += u.hinpct(0.025f);
+                    }
+                }
+                
+                for (int s = 0; s < 5; s++) {
+                    DrawTexturePro(
+                        assets.emptyStar,
+                        { 0, 0, (float)assets.emptyStar.width, (float)assets.emptyStar.height },
+                        { starX + (s * starScale), scoreY, starScale, starScale },
+                        { 0, 0 },
+                        0,
+                        WHITE
+                    );
+                }
+                if (highScoreForList.hasScore) {
                     for (int s = 0; s < highScoreForList.stars; s++) {
                         DrawTexturePro(
-                            assets.star,
-                            { 0, 0, (float)assets.star.width, (float)assets.star.height },
+                            highScoreForList.goldStars ? assets.goldStar : assets.star,
+                            { 0, 0, (float)(highScoreForList.goldStars ? assets.goldStar.width : assets.star.width), (float)(highScoreForList.goldStars ? assets.goldStar.height : assets.star.height) },
                             { starX + (s * starScale), scoreY, starScale, starScale },
                             { 0, 0 },
                             0,
                             WHITE
                         );
                     }
-                    
-                    float statsX = starX + (5 * starScale) + u.winpct(0.01f);
-                    std::string statsText = TextFormat("", highScoreForList.perfectHits, highScoreForList.goodHits, highScoreForList.misses);
-                    DrawTextEx(assets.rubik, statsText.c_str(), { statsX, scoreY + u.hinpct(0.002f) }, u.hinpct(0.02f), 0, WHITE);
-                } else {
-                    BeginScissorMode(songXPos + textXOffset, songYPos, songTitleWidth, currentEntryHeight);
-                    DrawTextEx(
-                        assets.rubikBold,
-                        songi.title.c_str(),
-                        { songXPos + textXOffset + titleScrollOffset, songYPos + (currentEntryHeight - titleFontSize) / 2 },
-                        titleFontSize,
-                        0,
-                        WHITE
-                    );
-                    EndScissorMode();
                 }
             } else {
                 BeginScissorMode(songXPos + textXOffset, songYPos, songTitleWidth, currentEntryHeight);
@@ -837,6 +865,9 @@ void SongSelectMenu::Draw() {
                 case SortType::Year:
                     SongTitleForCharThingyThatsTemporary = TheSongList.songs[TheSongList.listMenuEntries[songIndex].songListID].releaseYear.empty() ? "Unknown Year" : TheSongList.songs[TheSongList.listMenuEntries[songIndex].songListID].releaseYear;
                     break;
+                case SortType::Score:
+                    SongTitleForCharThingyThatsTemporary = "By Score";
+                    break;
                 default:
                     SongTitleForCharThingyThatsTemporary = "";
                     break;
@@ -872,33 +903,69 @@ void SongSelectMenu::Draw() {
             TheSongList.curSong->title,
             TheSongList.curSong->artist
         );
-        ScoreData highScore = LeaderboardManager::GetHighestScore(player.PlayerID, songID);
+        ScoreData highScore = LeaderboardManager::GetHighestScoreForInstrument(player.PlayerID, songID, static_cast<int>(GetScoreInstrumentFilter()));
         
-        if (highScore.hasScore) {
-            if (TheGameSettings.CompactScoreDisplay) {
-                float scoreDisplayY = AlbumY + AlbumHeight + AlbumOuter + (u.hinpct(0.05f));
-                float scoreDisplayX = u.RightSide - AlbumHeight + AlbumInner;
+        if (TheGameSettings.CompactScoreDisplay) {
+            float scoreDisplayY = AlbumY + AlbumHeight + AlbumOuter + (u.hinpct(0.05f));
+            float scoreDisplayX = u.RightSide - AlbumHeight + AlbumInner;
+            
+            float iconSize = u.hinpct(0.035f);
+            int iconIndex = GetScoreInstrumentIconIndex();
+            DrawTexturePro(
+                assets.InstIcons[iconIndex],
+                { 0, 0, (float)assets.InstIcons[iconIndex].width, (float)assets.InstIcons[iconIndex].height },
+                { scoreDisplayX, scoreDisplayY, iconSize, iconSize },
+                { 0, 0 },
+                0,
+                WHITE
+            );
+            
+            float scoreStartX = scoreDisplayX + iconSize + u.winpct(0.008f);
+            int displayScore = highScore.hasScore ? highScore.score : 0;
+            std::string scoreText = GameMenu::scoreCommaFormatter(displayScore);
+            float scoreFontSize = u.hinpct(0.04f);
+            float scoreTextWidth = MeasureTextEx(assets.rubikBold, scoreText.c_str(), scoreFontSize, 0).x;
+            
+            DrawTextEx(assets.rubikBold, scoreText.c_str(), { scoreStartX, scoreDisplayY }, scoreFontSize, 0, GetColor(0x00adffFF));
+            
+            if (highScore.hasScore) {
+                std::string percentageText = TextFormat("%.0f%%", highScore.hitPercentage);
+                Color percentageColor = (highScore.hitPercentage >= 100.0f) ? GOLD : WHITE;
+                float percentageTextWidth = MeasureTextEx(assets.rubik, percentageText.c_str(), u.hinpct(0.035f), 0).x;
                 
-                std::string scoreText = GameMenu::scoreCommaFormatter(highScore.score);
-                float scoreFontSize = u.hinpct(0.04f);
-                DrawTextEx(assets.rubikBold, scoreText.c_str(), { scoreDisplayX, scoreDisplayY }, scoreFontSize, 0, GetColor(0x00adffFF));
+                float percentageX = scoreStartX + scoreTextWidth + u.winpct(0.01f);
+                DrawTextEx(assets.rubik, percentageText.c_str(), { percentageX, scoreDisplayY + u.hinpct(0.002f) }, u.hinpct(0.035f), 0, percentageColor);
                 
-                float starScale = u.hinpct(0.03f);
-                float starY = scoreDisplayY + scoreFontSize + u.hinpct(0.005f);
-                for (int i = 0; i < 5; i++) {
+                if (highScore.hitPercentage >= 100.0f) {
+                    float crownSize = u.hinpct(0.035f);
                     DrawTexturePro(
-                        assets.emptyStar,
-                        { 0, 0, (float)assets.emptyStar.width, (float)assets.emptyStar.height },
-                        { scoreDisplayX + (i * starScale), starY, starScale, starScale },
+                        assets.crown,
+                        { 0, 0, (float)assets.crown.width, (float)assets.crown.height },
+                        { percentageX + percentageTextWidth + u.winpct(0.005f), scoreDisplayY, crownSize, crownSize },
                         { 0, 0 },
                         0,
                         WHITE
                     );
                 }
+            }
+            
+            float starScale = u.hinpct(0.03f);
+            float starY = scoreDisplayY + scoreFontSize + u.hinpct(0.005f);
+            for (int i = 0; i < 5; i++) {
+                DrawTexturePro(
+                    assets.emptyStar,
+                    { 0, 0, (float)assets.emptyStar.width, (float)assets.emptyStar.height },
+                    { scoreDisplayX + (i * starScale), starY, starScale, starScale },
+                    { 0, 0 },
+                    0,
+                    WHITE
+                );
+            }
+            if (highScore.hasScore) {
                 for (int i = 0; i < highScore.stars; i++) {
                     DrawTexturePro(
-                        assets.star,
-                        { 0, 0, (float)assets.star.width, (float)assets.star.height },
+                        highScore.goldStars ? assets.goldStar : assets.star,
+                        { 0, 0, (float)(highScore.goldStars ? assets.goldStar.width : assets.star.width), (float)(highScore.goldStars ? assets.goldStar.height : assets.star.height) },
                         { scoreDisplayX + (i * starScale), starY, starScale, starScale },
                         { 0, 0 },
                         0,
@@ -978,7 +1045,14 @@ void SongSelectMenu::Draw() {
         }
         prevAnimatingSongID = TheSongList.curSong ? TheSongList.curSong->songListPos - 1 : -1;
         currentSortValue = NextSortType(currentSortValue);
-        TheSongList.sortList(currentSortValue, selectedSongIndex);
+        
+        if (currentSortValue == SortType::Score) {
+            Player &player = ThePlayerManager.GetActivePlayer(0);
+            TheSongList.sortListByScore(static_cast<int>(GetScoreInstrumentFilter()), selectedSongIndex, player.PlayerID);
+        } else {
+            TheSongList.sortList(currentSortValue, selectedSongIndex);
+        }
+        
         if (selectedSongIndex >= 0 && selectedSongIndex < TheSongList.songs.size()) {
             TheSongList.curSong = &TheSongList.songs[selectedSongIndex];
             TheSongList.SongSelectOffset = TheSongList.curSong->songListPos - 5;
@@ -1009,6 +1083,39 @@ void SongSelectMenu::Draw() {
             ComputeSongTextMetrics(*TheSongList.curSong);
         }
     }
+    
+    // Instrument filter button - cycles through Vocals -> Bass -> Lead -> Drums
+    // Also re-sorts if currently sorted by Score
+    if (GuiButton(Rectangle{ u.LeftSide + (buttonWidth + buttonGap) * 3, buttonY + 2.5f, buttonWidth, buttonHeight - 2.5f }, GetScoreInstrumentName())) {
+        CycleScoreInstrumentFilter();
+        
+        // Re-sort by score if currently sorted by score
+        if (currentSortValue == SortType::Score) {
+            int selectedSongIndex = -1;
+            if (TheSongList.curSong) {
+                for (size_t i = 0; i < TheSongList.songs.size(); i++) {
+                    if (&TheSongList.songs[i] == TheSongList.curSong) {
+                        selectedSongIndex = i;
+                        break;
+                    }
+                }
+            }
+            prevAnimatingSongID = TheSongList.curSong ? TheSongList.curSong->songListPos - 1 : -1;
+            Player &player = ThePlayerManager.GetActivePlayer(0);
+            TheSongList.sortListByScore(static_cast<int>(GetScoreInstrumentFilter()), selectedSongIndex, player.PlayerID);
+            
+            if (selectedSongIndex >= 0 && selectedSongIndex < TheSongList.songs.size()) {
+                TheSongList.curSong = &TheSongList.songs[selectedSongIndex];
+                TheSongList.SongSelectOffset = TheSongList.curSong->songListPos - 5;
+                if (TheSongList.SongSelectOffset < 1) TheSongList.SongSelectOffset = 1;
+                if (TheSongList.SongSelectOffset > TheSongList.listMenuEntries.size() - 10)
+                    TheSongList.SongSelectOffset = TheSongList.listMenuEntries.size() - 10;
+                animatingSongID = TheSongList.curSong->songListPos - 1;
+                animationStartTime = curTime;
+            }
+        }
+    }
+    
     GuiSetStyle(BUTTON, TEXT_ALIGNMENT, TEXT_ALIGN_CENTER);
     if (GuiButton(Rectangle{ u.LeftSide + buttonWidth + buttonGap, buttonY + 2.5f, buttonWidth, buttonHeight - 2.5f }, "Back")) {
         if (!TheAudioManager.loadedStreams.empty()) {

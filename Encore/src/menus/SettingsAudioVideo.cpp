@@ -149,6 +149,14 @@ void SettingsAudioVideo::Draw() {
         {
             "Background Fade",
             "TBD"
+        },
+        {
+            "Instrument Icon",
+            "TBD"
+        },
+        {
+            "Icon Position",
+            "TBD"
         }
     };
 
@@ -721,6 +729,72 @@ void SettingsAudioVideo::Draw() {
     float percentFontSize = u.hinpct(0.02f) + 10.0f;
     Vector2 percentTextSize = MeasureTextEx(assets.rubikBold, percentText.c_str(), percentFontSize, 0);
     DrawTextEx(assets.rubikBold, percentText.c_str(), {fadeSliderRect.x + (fadeSliderRect.width - percentTextSize.x) / 2, fadeSliderRect.y + (fadeSliderRect.height - percentTextSize.y) / 2}, percentFontSize, 0, WHITE);
+
+    settingOffset++;
+    float instrumentIconTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    if (showVolumeSettings) {
+        instrumentIconTop += verticalSubmenuGap - 7.0f;
+    }
+    Rectangle instrumentIconBoxRect = {boxLeft - borderWidth, instrumentIconTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, instrumentIconTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, instrumentIconTop, boxWidth, EntryHeight, boxBackground);
+    Vector2 instrumentIconTextSize = MeasureTextEx(assets.rubikBold, "Instrument Icon", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Instrument Icon", {boxLeft + u.winpct(0.01f), instrumentIconTop + (EntryHeight - instrumentIconTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    Rectangle instrumentIconOffButtonRect = {OptionLeft + OptionWidth - 2 * toggleButtonWidth - toggleOffset, instrumentIconTop, toggleButtonWidth, buttonHeight};
+    Rectangle instrumentIconOnButtonRect = {OptionLeft + OptionWidth - toggleButtonWidth - toggleOffset, instrumentIconTop, toggleButtonWidth, buttonHeight};
+    if (CheckCollisionPointRec(mousePos, instrumentIconOffButtonRect) || CheckCollisionPointRec(mousePos, instrumentIconOnButtonRect)) {
+        selectedIndex = 16;
+        isHovering = true;
+        DrawRectangleLinesEx(instrumentIconBoxRect, highlightBorderWidth, glowColor);
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, !TheGameSettings.ShowInstrumentIcon ? ColorToInt(activeColor) : defaultColor);
+    if (GuiButton(instrumentIconOffButtonRect, "Off")) {
+        if (TheGameSettings.ShowInstrumentIcon) {
+            TheGameSettings.ShowInstrumentIcon = false;
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
+        }
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, TheGameSettings.ShowInstrumentIcon ? ColorToInt(activeColor) : defaultColor);
+    if (GuiButton(instrumentIconOnButtonRect, "On")) {
+        if (!TheGameSettings.ShowInstrumentIcon) {
+            TheGameSettings.ShowInstrumentIcon = true;
+            TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
+        }
+    }
+    if (!TheGameSettings.ShowInstrumentIcon) {
+        DrawRectangleLinesEx(instrumentIconOffButtonRect, highlightBorderWidth, glowColor);
+    } else {
+        DrawRectangleLinesEx(instrumentIconOnButtonRect, highlightBorderWidth, glowColor);
+    }
+    GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
+
+    settingOffset++;
+    float iconPositionTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    if (showVolumeSettings) {
+        iconPositionTop += verticalSubmenuGap - 7.0f;
+    }
+    Rectangle iconPositionBoxRect = {boxLeft - borderWidth, iconPositionTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, iconPositionTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, iconPositionTop, boxWidth, EntryHeight, boxBackground);
+    Vector2 iconPositionTextSize = MeasureTextEx(assets.rubikBold, "Icon Position", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Icon Position", {boxLeft + u.winpct(0.01f), iconPositionTop + (EntryHeight - iconPositionTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    
+    float positionCycleButtonWidth = toggleButtonWidth * 2 + toggleOffset;
+    Rectangle iconPositionCycleButtonRect = {OptionLeft + OptionWidth - positionCycleButtonWidth, iconPositionTop, positionCycleButtonWidth, buttonHeight};
+    
+    const char* positionNames[] = {"Right of Track", "Left of Track", "Bottom-Right", "Bottom-Left"};
+    const char* currentPosition = positionNames[TheGameSettings.InstrumentIconPosition % 4];
+    
+    if (CheckCollisionPointRec(mousePos, iconPositionCycleButtonRect)) {
+        selectedIndex = 17;
+        isHovering = true;
+        DrawRectangleLinesEx(iconPositionBoxRect, highlightBorderWidth, glowColor);
+    }
+    
+    if (GuiButton(iconPositionCycleButtonRect, currentPosition)) {
+        TheGameSettings.InstrumentIconPosition = (TheGameSettings.InstrumentIconPosition + 1) % 4;
+        TheGameSettings.SaveIfChanged(TheSettingsInitializer.GetSettingsFilePath());
+    }
 
     if (!isHovering) {
         selectedIndex = 0;

@@ -983,22 +983,16 @@ void gameplayRenderer::RenderHud(Player &player, float length) {
     );
 
     float FillPct = player.stats->comboFillCalc();
-    Vector4 MultFillColor { 0.8, 0.8, 0.8, playerAlpha };
+    Vector4 MultFillColor { 0.8, 0.8, 0.8, 1.0f };
     Vector4 GoldMultiplier { OverdriveColor.r / 255.0f,
                              OverdriveColor.g / 255.0f,
                              OverdriveColor.b / 255.0f,
-                             playerAlpha };
+                             1.0f };
     Vector4 BlueMultiplier;
     if (player.BrutalMode) {
-        BlueMultiplier.x = 1;
-        BlueMultiplier.y = 0;
-        BlueMultiplier.z = 0;
-        BlueMultiplier.w = playerAlpha;
+        BlueMultiplier = { 1, 0, 0, 1 };
     } else {
-        BlueMultiplier.x = 0.2;
-        BlueMultiplier.y = 0.6;
-        BlueMultiplier.z = 1;
-        BlueMultiplier.w = playerAlpha;
+        BlueMultiplier = { 0.2, 0.6, 1, 1 };
     }
 
     if (player.stats->IsBassOrVox()) {
@@ -1027,15 +1021,13 @@ void gameplayRenderer::RenderHud(Player &player, float length) {
         gprAssets.MultiplierFill, gprAssets.MultTextureLoc, gprAssets.MultFillBase
     );
 
-    Color multInnerDotColor = ColorBrightness(player.AccentColor, -0.5);
-    multInnerDotColor.a = (unsigned char)(playerAlpha * 255);
-    Color multInnerFrameColor = ColorBrightness(player.AccentColor, -0.4);
-    multInnerFrameColor.a = (unsigned char)(playerAlpha * 255);
-    
-    gprAssets.MultInnerDot.materials[0].maps[MATERIAL_MAP_ALBEDO].color = multInnerDotColor;
-    gprAssets.MultInnerFrame.materials[0].maps[MATERIAL_MAP_ALBEDO].color = multInnerFrameColor;
+    gprAssets.MultInnerDot.materials[0].maps[MATERIAL_MAP_ALBEDO].color =
+        ColorBrightness(player.AccentColor, -0.5);
+    for (int i = 0; i < gprAssets.MultInnerFrame.materialCount; i++) {
+        gprAssets.MultInnerFrame.materials[i].maps[MATERIAL_MAP_ALBEDO].color = WHITE;
+    }
 
-    Vector4 FColor = { 0.5f, 0.4f, 0.1, playerAlpha };
+    Vector4 FColor = { 0.5f, 0.4f, 0.1f, 1.0f };
     float ForFCTime = GetTime();
     int FCING = player.stats->FC ? 1 : 0;
     SetTextureWrap(gprAssets.MultFCTex1, TEXTURE_WRAP_REPEAT);
@@ -1043,11 +1035,10 @@ void gameplayRenderer::RenderHud(Player &player, float length) {
     SetTextureWrap(gprAssets.MultFCTex3, TEXTURE_WRAP_REPEAT);
     Color basicColor = player.Bot ? ColorBrightness(SKYBLUE, 0.2)
                                   : ColorBrightness(player.AccentColor, -0.4);
-    basicColor.a = (unsigned char)(playerAlpha * 255);
     Vector4 basicColorVec = { basicColor.r / 255.0f,
                               basicColor.g / 255.0f,
                               basicColor.b / 255.0f,
-                              playerAlpha };
+                              basicColor.a / 255.0f };
     SetShaderValue(
         gprAssets.FullComboIndicator, gprAssets.FCIndLoc, &FCING, SHADER_UNIFORM_INT
     );
@@ -1076,13 +1067,11 @@ void gameplayRenderer::RenderHud(Player &player, float length) {
     Color multColor = { 255, 255, 255, (unsigned char)(playerAlpha * 255) };
     DrawModel(gprAssets.MultFill, Vector3 { 0, 0.0f, 1.1f }, 1.0, multColor);
     DrawModel(gprAssets.MultOuterFrame, Vector3 { 0, 0.0f, 1.1f }, 1.0, multColor);
-    Color multInnerColor = ColorBrightness(player.AccentColor, -0.4);
-    multInnerColor.a = (unsigned char)(playerAlpha * 255);
     DrawModel(
         gprAssets.MultInnerFrame,
         Vector3 { 0, 0.0f, 1.1f },
         1.0,
-        multInnerColor
+        WHITE
     );
     DrawModelEx(
         gprAssets.multNumber,

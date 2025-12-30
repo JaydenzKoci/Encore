@@ -56,6 +56,7 @@ public:
     Texture2D star;
     Texture2D goldStar;
     Texture2D emptyStar;
+    Texture2D crown;
 
     Texture2D Scorebox;
     Texture2D Timerbox;

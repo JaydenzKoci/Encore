@@ -16,6 +16,8 @@ struct ScoreData {
     int goodHits = 0;
     int misses = 0;
     bool hasScore = false;
+    bool goldStars = false;
+    float hitPercentage = 0.0f;
 };
 
 class LeaderboardManager {
@@ -23,8 +25,9 @@ public:
     static std::string GenerateSongID(const std::string& title, const std::string& artist);
     static void SaveScore(const std::string& playerUUID, const std::string& songID, 
                          int score, int stars, int difficulty, int instrument,
-                         int perfectHits, int goodHits, int misses);
+                         int perfectHits, int goodHits, int misses, bool goldStars = false);
     static ScoreData GetHighestScore(const std::string& playerUUID, const std::string& songID);
+    static ScoreData GetHighestScoreForInstrument(const std::string& playerUUID, const std::string& songID, int instrument);
     static std::filesystem::path GetLeaderboardPath();
 private:
     static std::string SanitizeForID(const std::string& input);
