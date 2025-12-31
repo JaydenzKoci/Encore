@@ -223,6 +223,7 @@ public:
 
         if (!ifs.is_open()) {
             std::cerr << "Failed to open JSON file." << std::endl;
+            return;
         }
         if (!stemsPath.empty())
             stemsPath.clear();
@@ -343,6 +344,7 @@ public:
 
         if (!ifs.is_open()) {
             std::cerr << "Failed to open JSON file." << std::endl;
+            return;
         }
         if (!stemsPath.empty())
             stemsPath.clear();
@@ -357,6 +359,9 @@ public:
         document.Parse(jsonString.c_str());
         songInfoPath = jsonPath;
         songDir = jsonPath.parent_path();
+        if (!document.IsObject()) {
+            return;
+        }
         for (auto &item : document.GetObject()) {
             if (item.name == "title" && item.value.IsString())
                 title = item.value.GetString();
@@ -482,6 +487,7 @@ public:
                 LOG_ERROR,
                 TextFormat("Failed to open song JSON file. %s", jsonPath.c_str())
             );
+            return;
         }
         if (!stemsPath.empty())
             stemsPath.clear();

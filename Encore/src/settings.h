@@ -12,6 +12,18 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 
+namespace nlohmann {
+    template <>
+    struct adl_serializer<std::filesystem::path> {
+        static void to_json(json& j, const std::filesystem::path& p) {
+            j = p.string();
+        }
+        static void from_json(const json& j, std::filesystem::path& p) {
+            p = std::filesystem::path(j.get<std::string>());
+        }
+    };
+}
+
 #define SETTINGS_OPTIONS                                                                 \
     OPTION(float, avMainVolume, 0.25f)                                                    \
     OPTION(float, avActiveInstrumentVolume, 0.75f)                                       \
@@ -61,6 +73,19 @@ namespace Encore {
         SETTINGS_OPTIONS
 #undef OPTION
         std::vector<std::filesystem::path> SongPaths;
+        std::vector<bool> EnabledSongPaths;
+        
+        std::vector<std::filesystem::path> GetEnabledSongPaths() const {
+            std::vector<std::filesystem::path> enabled;
+            for (size_t i = 0; i < SongPaths.size(); i++) {
+                if (i < EnabledSongPaths.size() && EnabledSongPaths[i]) {
+                    enabled.push_back(SongPaths[i]);
+                } else if (i >= EnabledSongPaths.size()) {
+                    enabled.push_back(SongPaths[i]);
+                }
+            }
+            return enabled;
+        }
         
         std::vector<int> Keybinds4K = {68, 70, 74, 75};
         std::vector<int> Keybinds5K = {68, 70, 74, 75, 76};
@@ -103,6 +128,7 @@ namespace Encore {
         AudioOffset,
         DiscordRichPresence,
         SongPaths,
+        EnabledSongPaths,
         BackgroundBeatFlash,
         BackgroundTint,
         HideHitWindow,

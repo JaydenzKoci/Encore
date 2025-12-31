@@ -76,7 +76,8 @@ option(SUPPORT_FILEFORMAT_JPG "Support loading JPG as textures" ON)
 file(GLOB_RECURSE SRC_FILES "src/*.cpp" "include/*.cpp" "include/*.c")
 file(GLOB_RECURSE INC_FILES "include/*.h" "include/*.h*" "src/*.h")
 if (WIN32)
-add_executable(Encore ${SRC_FILES} ${INC_FILES} "resources.rc")
+add_executable(Encore ${SRC_FILES} ${INC_FILES} "resources.rc"
+        src/menus/SettingsSongPaths.cpp)
 else()
 add_executable(Encore ${SRC_FILES} ${INC_FILES}
         src/util/trackDownloader.cpp

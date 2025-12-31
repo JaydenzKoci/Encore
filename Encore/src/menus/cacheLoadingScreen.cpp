@@ -48,7 +48,11 @@ std::atomic<bool> started(false);
 
 void LoadCache() {
     SongList &list = TheSongList;
-    list.LoadCache(TheGameSettings.SongPaths);
+    auto enabledPaths = TheGameSettings.GetEnabledSongPaths();
+    if (enabledPaths.empty()) {
+        enabledPaths = TheGameSettings.SongPaths;
+    }
+    list.LoadCache(enabledPaths);
     std::atomic_thread_fence(std::memory_order_release);
     Encore::EncoreLog(LOG_INFO, "CACHE: Cache loading thread completed successfully");
     finished.store(true, std::memory_order_release);

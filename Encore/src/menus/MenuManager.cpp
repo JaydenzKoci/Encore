@@ -8,6 +8,7 @@
 #include "SettingsCredits.h"
 #include "SettingsGameplay.h"
 #include "SettingsKeyboard.h"
+#include "SettingsSongPaths.h"
 #include "DownloadSongs.h"
 #include "SettingsMenu.h"
 #include "SongSelectMenu.h"
@@ -81,6 +82,12 @@ void MenuManager::LoadMenu() {
     case DOWNLOADSONGS: {
         TheGameRPC.DiscordUpdatePresence("Downloading Songs...", "In the menus");
         ActiveMenu = new DownloadSongs;
+        ActiveMenu->Load();
+        break;
+    }
+    case SETTINGSSONGPATHS: {
+        TheGameRPC.DiscordUpdatePresence("Configuring Song Paths", "In the menus");
+        ActiveMenu = new SettingsSongPaths;
         ActiveMenu->Load();
         break;
     }
@@ -291,6 +298,7 @@ void MenuManager::DrawMenu() {
         case SETTINGSCONTROLLER:
         case SETTINGSKEYBOARD:
         case SETTINGSCREDITS:
+        case SETTINGSSONGPATHS:
         case DOWNLOADSONGS:
         case SONG_SELECT:
         case READY_UP:

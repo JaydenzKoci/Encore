@@ -10,7 +10,6 @@
 #include "gameplay/enctime.h"
 #include "OvershellMenu.h"
 #include "util/settings-text.h"
-#include "util/trackDownloader.h"
 #include <thread>
 #include <chrono>
 
@@ -107,15 +106,15 @@ void SettingsGameplay::Draw() {
             "TBD"
         },
         {
+            "Debug Timers",
+            "TBD"
+        },
+        {
             "Scan Songs",
             "TBD"
         },
         {
-            "Download All Tracks",
-            "TBD"
-        },
-        {
-            "Debug Timers",
+            "Song Paths",
             "TBD"
         }
     };
@@ -227,40 +226,6 @@ void SettingsGameplay::Draw() {
         DrawRectangleLinesEx(onButtonRect, highlightBorderWidth, glowColor);
     }
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
-
-    settingOffset++;
-    float scanSongsTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
-    Rectangle scanSongsBoxRect = {boxLeft - borderWidth, scanSongsTop - borderWidth, boxWidth + 2 * borderWidth, scanButtonHeight + 2 * borderWidth};
-    DrawRectangle(boxLeft - borderWidth, scanSongsTop - borderWidth, boxWidth + 2 * borderWidth, scanButtonHeight + 2 * borderWidth, boxBorder);
-    DrawRectangle(boxLeft, scanSongsTop, boxWidth, scanButtonHeight, boxBackground);
-    Vector2 scanSongsTextSize = MeasureTextEx(assets.rubikBold, "Scan Songs", EntryFontSize, 0);
-    DrawTextEx(assets.rubikBold, "Scan Songs", {boxLeft + u.winpct(0.01f), scanSongsTop + (scanButtonHeight - scanSongsTextSize.y) / 2}, EntryFontSize, 0, WHITE);
-    Rectangle scanButtonRect = {OptionLeft + OptionWidth - scanButtonWidth, scanSongsTop, scanButtonWidth, scanButtonHeight};
-    if (CheckCollisionPointRec(mousePos, scanButtonRect)) {
-        selectedIndex = 7;
-        isHovering = true;
-        DrawRectangleLinesEx(scanSongsBoxRect, highlightBorderWidth, glowColor);
-    }
-    if (GuiButton(scanButtonRect, "Scan Songs")) {
-        if (TheGameSettings.SongPaths.empty()) {
-            TraceLog(LOG_ERROR, "SongPaths is empty. Cannot scan songs.");
-        } else {
-            try {
-                TraceLog(LOG_INFO, "Starting song scan with %d paths", TheGameSettings.SongPaths.size());
-                for (const auto& path : TheGameSettings.SongPaths) {
-                    TraceLog(LOG_INFO, "Scanning path: %s", path.c_str());
-                }
-                TheSongList.ScanSongs(TheGameSettings.SongPaths);
-                TraceLog(LOG_INFO, "Song scan completed successfully");
-            } catch (const std::exception& e) {
-                TraceLog(LOG_ERROR, "Error during song scan: %s", e.what());
-            } catch (...) {
-                TraceLog(LOG_ERROR, "Unknown error during song scan");
-            }
-        }
-    }
-
-
 
     settingOffset++;
     float hideHitWindowTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
@@ -464,38 +429,6 @@ void SettingsGameplay::Draw() {
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
 
     settingOffset++;
-    float downloadTracksTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
-    Rectangle downloadTracksBoxRect = {boxLeft - borderWidth, downloadTracksTop - borderWidth, boxWidth + 2 * borderWidth, scanButtonHeight + 2 * borderWidth};
-    DrawRectangle(boxLeft - borderWidth, downloadTracksTop - borderWidth, boxWidth + 2 * borderWidth, scanButtonHeight + 2 * borderWidth, boxBorder);
-    DrawRectangle(boxLeft, downloadTracksTop, boxWidth, scanButtonHeight, boxBackground);
-    Vector2 downloadTracksTextSize = MeasureTextEx(assets.rubikBold, "Download Tracks", EntryFontSize, 0);
-    DrawTextEx(assets.rubikBold, "Download Tracks", {boxLeft + u.winpct(0.01f), downloadTracksTop + (scanButtonHeight - downloadTracksTextSize.y) / 2}, EntryFontSize, 0, WHITE);
-    Rectangle downloadButtonRect = {OptionLeft + OptionWidth - scanButtonWidth, downloadTracksTop, scanButtonWidth, scanButtonHeight};
-    
-    static bool isDownloading = false;
-    static std::string downloadStatus = "Download All";
-    
-    if (CheckCollisionPointRec(mousePos, downloadButtonRect)) {
-        selectedIndex = 9;
-        isHovering = true;
-        DrawRectangleLinesEx(downloadTracksBoxRect, highlightBorderWidth, glowColor);
-    }
-    
-    if (TheTrackDownloader.IsDownloading()) {
-        downloadStatus = "Downloading...";
-        isDownloading = true;
-    } else if (isDownloading && !TheTrackDownloader.IsDownloading()) {
-        downloadStatus = "Download All";
-        isDownloading = false;
-    }
-    
-    if (GuiButton(downloadButtonRect, downloadStatus.c_str()) && !isDownloading) {
-        TheTrackDownloader.StartBackgroundDownload();
-        isDownloading = true;
-        downloadStatus = "Starting...";
-    }
-
-    settingOffset++;
     float videoBackgroundsTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
     Rectangle videoBackgroundsBoxRect = {boxLeft - borderWidth, videoBackgroundsTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth};
     DrawRectangle(boxLeft - borderWidth, videoBackgroundsTop - borderWidth, boxWidth + 2 * borderWidth, EntryHeight + 2 * borderWidth, boxBorder);
@@ -599,6 +532,48 @@ void SettingsGameplay::Draw() {
         DrawRectangleLinesEx(debugTimersOnButtonRect, highlightBorderWidth, glowColor);
     }
     GuiSetStyle(BUTTON, BASE_COLOR_PRESSED, defaultColor);
+
+    settingOffset++;
+    float scanSongsTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    Rectangle scanSongsBoxRect = {boxLeft - borderWidth, scanSongsTop - borderWidth, boxWidth + 2 * borderWidth, scanButtonHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, scanSongsTop - borderWidth, boxWidth + 2 * borderWidth, scanButtonHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, scanSongsTop, boxWidth, scanButtonHeight, boxBackground);
+    Vector2 scanSongsTextSize = MeasureTextEx(assets.rubikBold, "Scan Songs", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Scan Songs", {boxLeft + u.winpct(0.01f), scanSongsTop + (scanButtonHeight - scanSongsTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    Rectangle scanButtonRect = {OptionLeft + OptionWidth - scanButtonWidth, scanSongsTop, scanButtonWidth, scanButtonHeight};
+    if (CheckCollisionPointRec(mousePos, scanButtonRect)) {
+        selectedIndex = 10;
+        isHovering = true;
+        DrawRectangleLinesEx(scanSongsBoxRect, highlightBorderWidth, glowColor);
+    }
+    if (GuiButton(scanButtonRect, "Scan Songs")) {
+        auto enabledPaths = TheGameSettings.GetEnabledSongPaths();
+        if (enabledPaths.empty()) {
+            TraceLog(LOG_ERROR, "No enabled song paths. Cannot scan songs.");
+        } else {
+            try {
+                TheSongList.ScanSongs(enabledPaths);
+            } catch (...) {
+            }
+        }
+    }
+
+    settingOffset++;
+    float songPathsTop = EntryTop + (EntryHeight + verticalGap) * settingOffset;
+    Rectangle songPathsBoxRect = {boxLeft - borderWidth, songPathsTop - borderWidth, boxWidth + 2 * borderWidth, scanButtonHeight + 2 * borderWidth};
+    DrawRectangle(boxLeft - borderWidth, songPathsTop - borderWidth, boxWidth + 2 * borderWidth, scanButtonHeight + 2 * borderWidth, boxBorder);
+    DrawRectangle(boxLeft, songPathsTop, boxWidth, scanButtonHeight, boxBackground);
+    Vector2 songPathsTextSize = MeasureTextEx(assets.rubikBold, "Song Paths", EntryFontSize, 0);
+    DrawTextEx(assets.rubikBold, "Song Paths", {boxLeft + u.winpct(0.01f), songPathsTop + (scanButtonHeight - songPathsTextSize.y) / 2}, EntryFontSize, 0, WHITE);
+    Rectangle songPathsButtonRect = {OptionLeft + OptionWidth - scanButtonWidth, songPathsTop, scanButtonWidth, scanButtonHeight};
+    if (CheckCollisionPointRec(mousePos, songPathsButtonRect)) {
+        selectedIndex = 11;
+        isHovering = true;
+        DrawRectangleLinesEx(songPathsBoxRect, highlightBorderWidth, glowColor);
+    }
+    if (GuiButton(songPathsButtonRect, "Manage Paths")) {
+        TheMenuManager.SwitchScreen(SETTINGSSONGPATHS);
+    }
 
     if (!isHovering) {
         selectedIndex = 0;

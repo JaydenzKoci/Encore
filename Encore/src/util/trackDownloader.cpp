@@ -366,8 +366,10 @@ void Encore::TrackDownloader::StartBackgroundDownload() {
         }
 
         downloadStatusText = "Scanning songs...";
-        if (!TheGameSettings.SongPaths.empty()) {
-            TheSongList.ScanSongs(TheGameSettings.SongPaths);
+        auto enabledPaths = TheGameSettings.GetEnabledSongPaths();
+        if (enabledPaths.empty()) enabledPaths = TheGameSettings.SongPaths;
+        if (!enabledPaths.empty()) {
+            TheSongList.ScanSongs(enabledPaths);
         }
 
         isDownloading = false;
